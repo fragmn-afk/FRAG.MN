@@ -42,16 +42,16 @@ export async function applyFragmnAutoMod(message, client) {
       : 0;
     activity.set(key, state);
 
-    const triggered = state.messages.length >= MESSAGE_LIMIT || repeats >= REPEAT_LIMIT;
+    const burstCount = state.messages.length;
+    const triggered = burstCount >= MESSAGE_LIMIT || repeats >= REPEAT_LIMIT;
     if (!triggered || now - state.lastAction < 60_000) return false;
 
+    const reason = burstCount >= MESSAGE_LIMIT
+      ? '8 секундэд хэт олон мессеж илгээсэн'
+      : 'Ижил мессежийг давтан илгээсэн';
     state.lastAction = now;
     state.messages = [];
     activity.set(key, state);
-
-    const reason = state.messages.length >= MESSAGE_LIMIT
-      ? '8 секундэд хэт олон мессеж илгээсэн'
-      : 'Ижил мессежийг давтан илгээсэн';
 
     await message.delete().catch(() => null);
     const member = message.member || await message.guild.members.fetch(message.author.id).catch(() => null);

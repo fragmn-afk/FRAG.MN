@@ -1,11 +1,11 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import {
-    skipНэг дуу,
+    skipTrack,
     stopPlayback,
     pausePlayback,
     resumePlayback,
-    shuffleДараалал,
+    shuffleQueue,
     setLoopMode,
     setVolume,
     seekTrack,
@@ -22,33 +22,33 @@ export default {
     category: 'Music',
     data: new SlashCommandBuilder()
         .setName('music')
-        .setDescription('Хөгжим, дараалал болон voice тохиргоог удирдах')
+        .setDescription('Manage playback, queue, and voice session settings')
         .addSubcommand((sub) =>
-            sub.setName('pause').setDescription('Хөгжим түр зогсоох'),
+            sub.setName('pause').setDescription('Pause playback'),
         )
         .addSubcommand((sub) =>
-            sub.setName('resume').setDescription('Хөгжим үргэлжлүүлэх'),
+            sub.setName('resume').setDescription('Resume playback'),
         )
         .addSubcommand((sub) =>
-            sub.setName('skip').setDescription('Одоогийн дууг алгасах'),
+            sub.setName('skip').setDescription('Skip the current track'),
         )
         .addSubcommand((sub) =>
-            sub.setName('stop').setDescription('Хөгжим зогсоож дараалал цэвэрлэх'),
+            sub.setName('stop').setDescription('Stop playback and clear the queue'),
         )
         .addSubcommand((sub) =>
-            sub.setName('shuffle').setDescription('Дууны дарааллыг холих'),
+            sub.setName('shuffle').setDescription('Shuffle the queue'),
         )
         .addSubcommand((sub) =>
             sub
                 .setName('loop')
-                .setDescription('Давталтын горим тохируулах')
+                .setDescription('Set loop mode')
                 .addStringOption((opt) =>
                     opt
                         .setName('mode')
-                        .setDescription('Давталтын горим')
+                        .setDescription('Loop mode')
                         .setRequired(true)
                         .addChoices(
-                            { name: 'Унтраах', value: 'none' },
+                            { name: 'Off', value: 'none' },
                             { name: 'Track', value: 'track' },
                             { name: 'Queue', value: 'queue' },
                         ),
@@ -57,50 +57,50 @@ export default {
         .addSubcommand((sub) =>
             sub
                 .setName('volume')
-                .setDescription('Дууны чанга сул тохируулах')
+                .setDescription('Set playback volume')
                 .addIntegerOption((opt) =>
-                    opt.setName('level').setDescription('Дууны түвшин (0–100)').setRequired(true).setMinValue(0).setMaxValue(100),
+                    opt.setName('level').setDescription('Volume (0-100)').setRequired(true).setMinValue(0).setMaxValue(100),
                 ),
         )
         .addSubcommand((sub) =>
             sub
                 .setName('seek')
-                .setDescription('Дууны тодорхой хугацаа руу шилжих')
+                .setDescription('Seek to a position in the current track')
                 .addIntegerOption((opt) =>
-                    opt.setName('seconds').setDescription('Хугацаа (секунд)').setRequired(true).setMinValue(0),
+                    opt.setName('seconds').setDescription('Position in seconds').setRequired(true).setMinValue(0),
                 ),
         )
         .addSubcommand((sub) =>
             sub
                 .setName('remove')
-                .setDescription('Дарааллаас дуу хасах')
+                .setDescription('Remove a track from the queue')
                 .addIntegerOption((opt) =>
-                    opt.setName('position').setDescription('Дарааллын байрлал').setRequired(true).setMinValue(1),
+                    opt.setName('position').setDescription('Queue position').setRequired(true).setMinValue(1),
                 ),
         )
         .addSubcommand((sub) =>
             sub
                 .setName('move')
-                .setDescription('Дууны дарааллын байрыг өөрчлөх')
+                .setDescription('Move a track in the queue')
                 .addIntegerOption((opt) =>
-                    opt.setName('from').setDescription('Одоогийн байрлал').setRequired(true).setMinValue(1),
+                    opt.setName('from').setDescription('Current position').setRequired(true).setMinValue(1),
                 )
                 .addIntegerOption((opt) =>
-                    opt.setName('to').setDescription('Шинэ байрлал').setRequired(true).setMinValue(1),
+                    opt.setName('to').setDescription('New position').setRequired(true).setMinValue(1),
                 ),
         )
         .addSubcommand((sub) =>
-            sub.setName('clear').setDescription('Дараалал цэвэрлэх'),
+            sub.setName('clear').setDescription('Clear the queue'),
         )
         .addSubcommand((sub) =>
-            sub.setName('leave').setDescription('Bot-ыг voice сувгаас гаргах'),
+            sub.setName('leave').setDescription('Disconnect the bot from the voice channel'),
         )
         .addSubcommand((sub) =>
             sub
                 .setName('247')
-                .setDescription('24/7 горим асаах эсвэл унтраах')
+                .setDescription('Toggle 24/7 mode (stay in voice channel when idle)')
                 .addBooleanOption((opt) =>
-                    opt.setName('enabled').setDescription('24/7 горимын төлөв').setRequired(true),
+                    opt.setName('enabled').setDescription('Enable or disable 24/7 mode').setRequired(true),
                 ),
         ),
 

@@ -102,13 +102,47 @@ async function ensureTicketPermission(interaction, client, actionLabel, options 
   return context;
 }
 
+async function resolveTicketPanelAccess(interaction, config, panelId) {
+  if (!panelId) return { allowed: true, panel: null };
+  const panel = Array.isArray(config.ticketPanels)
+    ? config.ticketPanels.find((item) => item.id === panelId)
+    : null;
+  if (!panel) return { allowed: false, message: 'Энэ ticket panel устгагдсан эсвэл тохиргоо олдсонгүй.' };
+
+  const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
+  if (!member) return { allowed: false, message: 'Таны серверийн гишүүний мэдээллийг авч чадсангүй.' };
+
+  const roleIds = [...member.roles.cache.keys()];
+  if ((panel.blacklistedUserIds || []).includes(interaction.user.id)) {
+    return { allowed: false, message: 'Та энэ ticket panel ашиглах эрхгүй байна.' };
+  }
+  if ((panel.blacklistedRoleIds || []).some((id) => roleIds.includes(id))) {
+    return { allowed: false, message: 'Таны role энэ ticket panel ашиглахыг хориглосон байна.' };
+  }
+
+  const requiredRoleIds = [
+    ...(panel.requiredRoleId ? [panel.requiredRoleId] : []),
+    ...(Array.isArray(panel.requiredRoleIds) ? panel.requiredRoleIds : []),
+  ];
+  if (requiredRoleIds.length && !requiredRoleIds.some((id) => roleIds.includes(id))) {
+    return { allowed: false, message: 'Энэ ticket panel ашиглахад шаардлагатай role танд алга.' };
+  }
+  if (Array.isArray(panel.allowedRoleIds) && panel.allowedRoleIds.length &&
+      !panel.allowedRoleIds.some((id) => roleIds.includes(id))) {
+    return { allowed: false, message: 'Таны role энэ ticket panel-д зөвшөөрөгдөөгүй байна.' };
+  }
+
+  return { allowed: true, panel, member };
+}
+
 const createTicketHandler = {
   name: 'create_ticket',
-  async execute(interaction, client) {
+  async execute(interaction, client, args = []) {
     try {
       if (!(await ensureGuildContext(interaction))) return;
 
-      const rateLimitKey = `${interaction.user.id}:create_ticket`;
+      const panelId = args?.[0] || null;
+      const rateLimitKey = interaction.user.id + ':create_ticket:' + (panelId || 'default');
       const allowed = await checkRateLimit(rateLimitKey, 3, 60000);
       if (!allowed) {
         await replyUserError(interaction, { type: ErrorTypes.RATE_LIMIT, message: 'You are creating tickets too quickly. Please wait a minute and try again.' });
@@ -116,18 +150,26 @@ const createTicketHandler = {
       }
 
       const config = await getGuildConfig(client, interaction.guildId);
-      const maxTicketsPerUser = config.maxTicketsPerUser || 3;
-      
-      const { getUserTicketCount } = await import('../services/ticket.js');
-      const currentTicketCount = await getUserTicketCount(interaction.guildId, interaction.user.id);
-      
-      if (currentTicketCount >= maxTicketsPerUser) {
-        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `You have reached the maximum number of open tickets (${maxTicketsPerUser}).\n\nPlease close your existing tickets before creating a new one.\n\n**Current Tickets:** ${currentTicketCount}/${maxTicketsPerUser}` });
+      const access = await resolveTicketPanelAccess(interaction, config, panelId);
+      if (!access.allowed) {
+        return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: access.message });
       }
-      
+
+      const panel = access.panel;
+      const maxTicketsPerUser = panel?.maxTicketsPerUser ?? config.maxTicketsPerUser ?? 3;
+      const { getUserTicketCount } = await import('../services/ticket.js');
+      const currentTicketCount = await getUserTicketCount(interaction.guildId, interaction.user.id, panelId);
+
+      if (currentTicketCount >= maxTicketsPerUser) {
+        return await replyUserError(interaction, {
+          type: ErrorTypes.UNKNOWN,
+          message: 'You have reached the maximum number of open tickets (' + maxTicketsPerUser + ') for this panel.\\n\\nCurrent Tickets: ' + currentTicketCount + '/' + maxTicketsPerUser,
+        });
+      }
+
       const modal = new ModalBuilder()
-        .setCustomId('create_ticket_modal')
-        .setTitle('Create a Ticket');
+        .setCustomId(panelId ? 'create_ticket_modal:' + panelId : 'create_ticket_modal')
+        .setTitle((panel?.name || 'Create a Ticket').slice(0, 45));
 
       const reasonInput = new TextInputBuilder()
         .setCustomId('reason')
@@ -139,7 +181,6 @@ const createTicketHandler = {
 
       const actionRow = new ActionRowBuilder().addComponents(reasonInput);
       modal.addComponents(actionRow);
-
       await interaction.showModal(modal);
     } catch (error) {
       logger.error('Error creating ticket modal:', error);
@@ -152,27 +193,46 @@ const createTicketHandler = {
 
 const createTicketModalHandler = {
   name: 'create_ticket_modal',
-  async execute(interaction, client) {
+  async execute(interaction, client, args = []) {
     try {
       if (!(await ensureGuildContext(interaction))) return;
 
+      const panelId = args?.[0] || null;
+      const config = await getGuildConfig(client, interaction.guildId);
+      const access = await resolveTicketPanelAccess(interaction, config, panelId);
+      if (!access.allowed) {
+        return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: access.message });
+      }
+
+      const panel = access.panel;
       const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
       if (!deferSuccess) return;
-      
+
       const reason = interaction.fields.getTextInputValue('reason');
-      const config = await getGuildConfig(client, interaction.guildId);
-      const categoryId = config.ticketCategoryId || null;
-      
+      const categoryId = panel?.categoryId || config.ticketCategoryId || null;
+      const panelOptions = panel ? {
+        panelId: panel.id,
+        maxTicketsPerUser: panel.maxTicketsPerUser,
+        staffRoleId: panel.staffRoleId,
+        closedCategoryId: panel.closedCategoryId,
+        dmOnClose: panel.dmOnClose,
+        autoPing: panel.autoPing,
+        transcriptChannelId: panel.transcriptChannelId,
+        ticketLogsChannelId: panel.ticketLogsChannelId,
+      } : {};
+
       const { channel } = await createTicket(
         interaction.guild,
         interaction.member,
         categoryId,
-        reason
+        reason,
+        'none',
+        panelOptions,
       );
       await interaction.editReply({
         embeds: [successEmbed(
           'Ticket Created',
-          `Your ticket has been created in ${channel}!`
+          'Your ticket has been created in ' + channel + '!'
         )]
       });
     } catch (error) {

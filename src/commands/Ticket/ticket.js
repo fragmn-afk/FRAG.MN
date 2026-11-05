@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { getColor } from '../../config/bot.js';
 import { SlashCommandBuilder, PermissionFlagsBits, PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
@@ -90,6 +91,35 @@ export default {
             subcommand
                 .setName("dashboard")
                 .setDescription("Open the interactive ticket system dashboard"),
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("panel-create")
+                .setDescription("Create an additional ticket panel with independent settings")
+                .addStringOption((option) => option.setName("name").setDescription("Panel name").setRequired(true))
+                .addChannelOption((option) => option.setName("panel_channel").setDescription("Where to post this panel").addChannelTypes(ChannelType.GuildText).setRequired(true))
+                .addStringOption((option) => option.setName("panel_message").setDescription("Panel description").setRequired(true))
+                .addStringOption((option) => option.setName("button_label").setDescription("Create button text").setRequired(false))
+                .addChannelOption((option) => option.setName("category").setDescription("Open ticket category").addChannelTypes(ChannelType.GuildCategory).setRequired(false))
+                .addChannelOption((option) => option.setName("closed_category").setDescription("Closed ticket category").addChannelTypes(ChannelType.GuildCategory).setRequired(false))
+                .addRoleOption((option) => option.setName("staff_role").setDescription("Staff role that can view tickets").setRequired(false))
+                .addRoleOption((option) => option.setName("required_role").setDescription("Role required to open this panel").setRequired(false))
+                .addIntegerOption((option) => option.setName("max_tickets_per_user").setDescription("Maximum open tickets in this panel").setMinValue(1).setMaxValue(10).setRequired(false))
+                .addBooleanOption((option) => option.setName("dm_on_close").setDescription("DM the ticket creator on close").setRequired(false))
+                .addBooleanOption((option) => option.setName("auto_ping").setDescription("Ping the configured staff role").setRequired(false))
+                .addChannelOption((option) => option.setName("transcript_channel").setDescription("Transcript destination").addChannelTypes(ChannelType.GuildText).setRequired(false))
+                .addChannelOption((option) => option.setName("logs_channel").setDescription("Ticket logs destination").addChannelTypes(ChannelType.GuildText).setRequired(false))
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("panels")
+                .setDescription("List all configured ticket panels"),
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("panel-delete")
+                .setDescription("Delete a ticket panel by its ID")
+                .addStringOption((option) => option.setName("panel_id").setDescription("Panel ID shown by /ticket panels").setRequired(true)),
         ),
     category: "ticket",
 
@@ -116,6 +146,136 @@ export default {
 
         if (subcommand === "dashboard") {
             return ticketConfig.execute(interaction, config, client);
+        }
+
+        if (subcommand === "panels") {
+            const guildConfig = await getGuildConfig(client, interaction.guildId);
+            const panels = Array.isArray(guildConfig.ticketPanels) ? guildConfig.ticketPanels : [];
+            const fields = panels.map((panel) => ({
+                name: panel.name + " • " + panel.id,
+                value: "Channel: <#" + panel.channelId + ">\nStaff: " + (panel.staffRoleId ? "<@&" + panel.staffRoleId + ">" : "Not set") +
+                    "\nRequired role: " + (panel.requiredRoleId ? "<@&" + panel.requiredRoleId + ">" : "Anyone") +
+                    "\nMax open tickets: " + (panel.maxTicketsPerUser || 3),
+                inline: false,
+            }));
+            if (!fields.length) {
+                fields.push({ name: "No additional panels", value: "Create one with /ticket panel-create. Your legacy panel, if any, remains active.", inline: false });
+            }
+            const embed = createEmbed({
+                title: "🎫 Ticket Panels",
+                description: "Additional panel configurations for this server.",
+                color: getColor('info'),
+                fields,
+            });
+            return InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
+        }
+
+        if (subcommand === "panel-delete") {
+            const guildConfig = await getGuildConfig(client, interaction.guildId);
+            const panelId = interaction.options.getString("panel_id", true);
+            const panels = Array.isArray(guildConfig.ticketPanels) ? [...guildConfig.ticketPanels] : [];
+            const index = panels.findIndex((panel) => panel.id === panelId);
+            if (index === -1) {
+                return replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: "Panel ID олдсонгүй. /ticket panels ашиглан ID-гаа шалгана уу." });
+            }
+
+            const [removed] = panels.splice(index, 1);
+            const panelChannel = await interaction.guild.channels.fetch(removed.channelId).catch(() => null);
+            const panelMessage = panelChannel?.messages
+                ? await panelChannel.messages.fetch(removed.messageId).catch(() => null)
+                : null;
+            if (panelMessage) await panelMessage.delete().catch(() => {});
+            guildConfig.ticketPanels = panels;
+            await setGuildConfig(client, interaction.guildId, guildConfig);
+            return InteractionHelper.safeEditReply(interaction, {
+                embeds: [successEmbed("Ticket Panel Deleted", "Deleted **" + removed.name + "** (" + removed.id + "). Existing tickets created from this panel are not deleted.")],
+            });
+        }
+
+        if (subcommand === "panel-create") {
+            const guildConfig = await getGuildConfig(client, interaction.guildId);
+            const panels = Array.isArray(guildConfig.ticketPanels) ? [...guildConfig.ticketPanels] : [];
+            if (panels.length >= 10) {
+                return replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: "Нэг серверт хамгийн ихдээ 10 нэмэлт ticket panel үүсгэж болно." });
+            }
+
+            const panelName = interaction.options.getString("name", true).trim().slice(0, 80);
+            const panelChannel = interaction.options.getChannel("panel_channel", true);
+            const category = interaction.options.getChannel("category");
+            const closedCategory = interaction.options.getChannel("closed_category");
+            const staffRole = interaction.options.getRole("staff_role");
+            const requiredRole = interaction.options.getRole("required_role");
+            const transcriptChannel = interaction.options.getChannel("transcript_channel");
+            const logsChannel = interaction.options.getChannel("logs_channel");
+            const maxTicketsPerUser = interaction.options.getInteger("max_tickets_per_user") || 3;
+            const panelMessage = interaction.options.getString("panel_message", true).trim().slice(0, 4000);
+            const buttonLabel = (interaction.options.getString("button_label") || "Create Ticket").trim().slice(0, 80);
+            const dmOnClose = interaction.options.getBoolean("dm_on_close") !== false;
+            const autoPing = interaction.options.getBoolean("auto_ping") !== false;
+
+            const panelId = randomUUID().replace(/-/g, "").slice(0, 8);
+            const panel = {
+                id: panelId,
+                name: panelName || "Support",
+                channelId: panelChannel.id,
+                messageId: null,
+                panelMessage,
+                buttonLabel,
+                categoryId: category?.id || null,
+                closedCategoryId: closedCategory?.id || null,
+                staffRoleId: staffRole?.id || null,
+                requiredRoleId: requiredRole?.id || null,
+                allowedRoleIds: [],
+                blacklistedRoleIds: [],
+                blacklistedUserIds: [],
+                maxTicketsPerUser,
+                dmOnClose,
+                autoPing,
+                transcriptChannelId: transcriptChannel?.id || null,
+                ticketLogsChannelId: logsChannel?.id || null,
+                createdAt: new Date().toISOString(),
+                createdBy: interaction.user.id,
+            };
+
+            try {
+                const panelEmbed = createEmbed({
+                    title: panel.name,
+                    description: panel.panelMessage,
+                    color: getColor('info'),
+                });
+                const panelButton = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId("create_ticket:" + panelId)
+                        .setLabel(panel.buttonLabel)
+                        .setStyle(ButtonStyle.Primary)
+                        .setEmoji("📩"),
+                );
+                const sentMessage = await panelChannel.send({ embeds: [panelEmbed], components: [panelButton] });
+                panel.messageId = sentMessage.id;
+
+                panels.push(panel);
+                guildConfig.ticketPanels = panels;
+                await setGuildConfig(client, interaction.guildId, guildConfig);
+
+                return InteractionHelper.safeEditReply(interaction, {
+                    embeds: [successEmbed(
+                        "Ticket Panel Created",
+                        "**" + panel.name + "** panel-г " + panelChannel + " сувагт байршууллаа.\n\nPanel ID: `" + panelId +
+                        "`\nMax tickets: **" + maxTicketsPerUser + "**\nStaff: " + (staffRole ? staffRole.toString() : "Not set"),
+                    )],
+                });
+            } catch (error) {
+                logger.error("Failed to create additional ticket panel", {
+                    guildId: interaction.guildId, panelId, error: error.message,
+                });
+                if (panel.messageId) {
+                    await panelChannel.messages.fetch(panel.messageId).then((message) => message.delete()).catch(() => {});
+                }
+                return replyUserError(interaction, {
+                    type: ErrorTypes.UNKNOWN,
+                    message: "Ticket panel үүсгэж/хадгалж чадсангүй. Bot-ийн channel permission болон database connection-ийг шалгана уу.",
+                });
+            }
         }
 
         if (subcommand === "setup") {

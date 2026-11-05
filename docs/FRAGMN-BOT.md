@@ -32,27 +32,3 @@ FRAGMN_TIMEZONE=Asia/Ulaanbaatar
 
 ## Existing feature-үүд
 Ticket, moderation, logging, welcome, verification, leveling, giveaway, economy, music, server stats зэрэг TitanBot системийг солихгүй, дахин эхлүүлэхгүй.
-
-
-## 3. Автомат moderation, warning, logging
-- `/frag-automod status` — AutoMod төлөв харах.
-- `/frag-automod enable` — Спам хамгаалалт асаах.
-- `/frag-automod disable` — Спам хамгаалалт унтраах.
-- Асаасан үед 8 секундэд 6 ба түүнээс олон мессеж, эсвэл ижил мессежийг 3 удаа давтахыг илрүүлнэ.
-- Илэрсэн мессежийг устгах, WARN бүртгэх, боломжтой бөгөөд тохиргоо зөвшөөрсөн үед 2 минут timeout хийхийг оролдоно.
-- Audit log-д үйлдлийг бүртгэхийн тулд Logging системийн audit channel тохируулсан байх шаардлагатай.
-- AutoMod нь анхдагчаар унтраалттай; серверийн админ өөрөө асаана.
-
-## 6. Giveaway, Leveling, Economy
-Эдгээр системүүд repository-д аль хэдийн байна. Гол командууд:
-- Giveaway: `/gcreate`, `/gend`, `/gdelete`, `/greroll`
-- Leveling: `/rank`, `/leaderboard`, `/level`, `/levelset`
-- Economy: `/balance`, `/daily`, `/work`, `/pay`, `/shop`, `/inventory`
-Эдгээрийн өгөгдөл одоогийн database/storage service-ээр хадгалагдана.
-
-## 7. Music
-Music систем Riffy + Lavalink ашиглана:
-- `/play query` — дуу хайж тоглуулах
-- `/music pause|resume|skip|stop|shuffle|loop|volume|seek|remove|move|clear|leave|247`
-- `/queue`, `/nowplaying`, `/join`
-Production орчинд Lavalink node ажиллаж байх ёстой. `LAVALINK_HOST`, `LAVALINK_PORT`, `LAVALINK_PASSWORD`, `LAVALINK_SECURE` эсвэл `LAVALINK_NODES` тохируулна. Нууц үг болон bot token-ийг git-д бүү commit хий.

@@ -112,7 +112,6 @@ class TitanBot extends Client {
 
   startWebServer() {
     const app = express();
-    app.use('/api/qpay', express.json({ limit: '32kb' }), createQPayRouter(this));
     const configuredPort = Number(this.config.api?.port || process.env.PORT || 3000);
     const maxPortRetryAttempts = Number(process.env.PORT_RETRY_ATTEMPTS || 5);
     const host = process.env.WEB_HOST || '0.0.0.0';
@@ -157,6 +156,9 @@ class TitanBot extends Client {
       requestCounts.set(ip, times);
       next();
     });
+
+    // Keep the payment callback behind the shared API rate limiter.
+    app.use('/api/qpay', express.json({ limit: '32kb' }), createQPayRouter(this));
 
     app.get('/health', (req, res) => {
       const dbStatus = this.db?.getStatus?.() || { isDegraded: 'unknown' };

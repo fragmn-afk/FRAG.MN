@@ -7,6 +7,7 @@ import { logEvent, EVENT_TYPES } from '../services/loggingService.js';
 import { getServerCounters, updateCounter } from '../services/serverstatsService.js';
 import { setBirthday as dbSetBirthday } from '../utils/database.js';
 import { logger } from '../utils/logger.js';
+import { handleAntiRaidJoin } from '../services/fragmnSecurityService.js';
 
 export default {
   name: Events.GuildMemberAdd,
@@ -15,6 +16,10 @@ export default {
   async execute(member) {
     try {
         const { guild, user } = member;
+
+        await handleAntiRaidJoin(member).catch((error) => {
+            logger.warn('FRAG.MN Anti-Raid join handler failed:', error.message);
+        });
         
         const config = await getGuildConfig(member.client, guild.id);
         

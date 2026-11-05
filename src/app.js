@@ -2,6 +2,7 @@
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import { REST } from '@discordjs/rest';
 import express from 'express';
+import { createQPayRouter } from './routes/qpay.js';
 import cron from 'node-cron';
 
 import config from './config/application.js';
@@ -111,6 +112,7 @@ class TitanBot extends Client {
 
   startWebServer() {
     const app = express();
+    app.use('/api/qpay', express.json({ limit: '32kb' }), createQPayRouter(this));
     const configuredPort = Number(this.config.api?.port || process.env.PORT || 3000);
     const maxPortRetryAttempts = Number(process.env.PORT_RETRY_ATTEMPTS || 5);
     const host = process.env.WEB_HOST || '0.0.0.0';

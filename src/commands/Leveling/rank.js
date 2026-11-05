@@ -7,11 +7,11 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('rank')
-    .setDescription("Өөрийн эсвэл бусад гишүүний түвшин, XP харах")
+    .setDescription("Check your or another user's rank and level")
     .addUserOption((option) =>
       option
         .setName('user')
-        .setDescription('Мэдээллийг харах гишүүн')
+        .setDescription('The user to check the rank of')
         .setRequired(false)
     )
     .setDMPermission(false),
@@ -26,7 +26,7 @@ export default {
         embeds: [
           new EmbedBuilder()
             .setColor('#f1c40f')
-            .setDescription('Энэ серверт түвшний систем унтраалттай байна.')
+            .setDescription('The leveling system is currently disabled on this server.')
         ],
         flags: MessageFlags.Ephemeral
       });
@@ -59,7 +59,7 @@ export default {
     const progressBar = createProgressBar(progress, 20);
 
     const embed = new EmbedBuilder()
-      .setTitle(`${member.displayName} — түвшний мэдээлэл`)
+      .setTitle(`${member.displayName}'s Rank`)
       .setThumbnail(member.displayAvatarURL({ dynamic: true }))
       .addFields(
         {

@@ -21,19 +21,19 @@ const GIVEAWAY_MAX_WINNERS = botConfig.giveaways?.maximumWinners ?? 10;
 export default {
     data: new SlashCommandBuilder()
         .setName("gcreate")
-        .setDescription("Сонгосон сувагт шинэ giveaway эхлүүлэх.")
+        .setDescription("Starts a new giveaway in a specified channel.")
         .addStringOption((option) =>
             option
                 .setName("duration")
                 .setDescription(
-                    "Giveaway үргэлжлэх хугацаа (жишээ: 1h, 30m, 5d).",
+                    "How long the giveaway should last (e.g., 1h, 30m, 5d).",
                 )
                 .setRequired(true),
         )
         .addIntegerOption((option) =>
             option
                 .setName("winners")
-                .setDescription("Сонгох ялагчдын тоо.")
+                .setDescription("The number of winners to pick.")
                 .setMinValue(GIVEAWAY_MIN_WINNERS)
                 .setMaxValue(GIVEAWAY_MAX_WINNERS)
                 .setRequired(true),
@@ -41,13 +41,13 @@ export default {
         .addStringOption((option) =>
             option
                 .setName("prize")
-                .setDescription("Шагналын нэр.")
+                .setDescription("The prize being given away.")
                 .setRequired(true),
         )
         .addChannelOption((option) =>
             option
                 .setName("channel")
-                .setDescription("Giveaway зарлах суваг (хоосон бол одоогийн суваг).")
+                .setDescription("The channel to send the giveaway to (defaults to current channel).")
                 .addChannelTypes(ChannelType.GuildText)
                 .setRequired(false),
         )

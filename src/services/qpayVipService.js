@@ -118,12 +118,8 @@ export async function createVipInvoice(client, { guildId, userId, tier }) {
 
   const saved = await setInDb(invoiceKey(invoice.invoiceId), invoice);
   if (!saved) {
-    try {
-      await qpayPost('/v2/invoice/cancel', { invoice_id: invoice.invoiceId });
-    } catch (cancelError) {
-      logger.warn('Could not cancel untracked QPay invoice', { invoiceId: invoice.invoiceId, error: cancelError.message });
-    }
-    throw new Error('Төлбөрийн нэхэмжлэхийг database-д хадгалж чадсангүй.');
+    logger.error('QPay invoice was created but could not be persisted', { invoiceId: invoice.invoiceId });
+    throw new Error('Төлбөрийн нэхэмжлэхийг database-д хадгалж чадсангүй. Дахин оролдоно уу.');
   }
 
   await setInDb(latestKey(guildId, userId), invoice.invoiceId);

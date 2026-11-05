@@ -70,8 +70,8 @@ function buildTicketControlRow({ claimedBy = null } = {}) {
   );
 }
 
-export const getUserTicketCount = wrapServiceBoundary(async function getUserTicketCount(guildId, userId) {
-  return await getOpenTicketCountForUser(guildId, userId);
+export const getUserTicketCount = wrapServiceBoundary(async function getUserTicketCount(guildId, userId, panelId = null) {
+  return await getOpenTicketCountForUser(guildId, userId, panelId);
 }, {
   service: TICKET_SERVICE,
   operation: 'getUserTicketCount',
@@ -79,13 +79,14 @@ export const getUserTicketCount = wrapServiceBoundary(async function getUserTick
   context: {},
 });
 
-export async function createTicket(guild, member, categoryId, reason = 'No reason provided', priority = 'none') {
+export async function createTicket(guild, member, categoryId, reason = 'No reason provided', priority = 'none', panelOptions = {}) {
   try {
     const config = await getGuildConfig(guild.client, guild.id);
     const ticketConfig = config.tickets || {};
     
-    const maxTicketsPerUser = config.maxTicketsPerUser ?? 3;
-    const currentTicketCount = await getUserTicketCount(guild.id, member.id);
+    const panelId = panelOptions.panelId || null;
+    const maxTicketsPerUser = panelOptions.maxTicketsPerUser ?? config.maxTicketsPerUser ?? 3;
+    const currentTicketCount = await getUserTicketCount(guild.id, member.id, panelId);
     
     if (currentTicketCount >= maxTicketsPerUser) {
       ticketUserError(
@@ -117,6 +118,7 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
     }
     
     const ticketNumber = await getNextTicketNumber(guild.id);
+    const staffRoleId = panelOptions.staffRoleId ?? config.ticketStaffRoleId ?? null;
     
     let channelName = `ticket-${ticketNumber}`;
     
@@ -145,8 +147,8 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
             PermissionFlagsBits.ReadMessageHistory,
           ],
         },
-        ...(config.ticketStaffRoleId ? [{
-          id: config.ticketStaffRoleId,
+        ...(staffRoleId ? [{
+          id: staffRoleId,
           allow: [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
@@ -166,6 +168,17 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
       claimedBy: null,
       priority: priority || 'none',
       reason,
+      ...(panelId ? {
+        panelId,
+        categoryId: category?.id || null,
+        closedCategoryId: panelOptions.closedCategoryId || null,
+        staffRoleId,
+        maxTicketsPerUser,
+        dmOnClose: panelOptions.dmOnClose !== false,
+        autoPing: panelOptions.autoPing !== false,
+        transcriptChannelId: panelOptions.transcriptChannelId || null,
+        ticketLogsChannelId: panelOptions.ticketLogsChannelId || null,
+      } : {}),
     };
     
     await saveTicketData(guild.id, channel.id, ticketData);
@@ -200,7 +213,7 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
       );
     }
     
-    const staffMention = config.ticketStaffRoleId ? ` <@&${config.ticketStaffRoleId}>` : '';
+    const staffMention = staffRoleId && panelOptions.autoPing !== false ? ` <@&${staffRoleId}>` : '';
     const messageContent = `${member.toString()}${staffMention}`;
     
     const ticketMessage = await channel.send({ 
@@ -241,8 +254,12 @@ export async function closeTicket(channel, closer, reason = 'No reason provided'
     const ticketData = requireTicket(await getTicketData(channel.guild.id, channel.id), channel);
     
     const config = await getGuildConfig(channel.client, channel.guild.id);
-    const dmOnClose = config.dmOnClose !== false;
-    const closedCategoryId = config.ticketClosedCategoryId || null;
+    const dmOnClose = ticketData.panelId
+      ? ticketData.dmOnClose !== false
+      : config.dmOnClose !== false;
+    const closedCategoryId = ticketData.panelId
+      ? ticketData.closedCategoryId || null
+      : config.ticketClosedCategoryId || null;
     let movedToClosedCategory = false;
     
     ticketData.status = 'closed';
@@ -519,7 +536,9 @@ export async function reopenTicket(channel, reopener) {
     }
 
     const config = await getGuildConfig(channel.client, channel.guild.id);
-    const openCategoryId = config.ticketCategoryId || null;
+    const openCategoryId = ticketData.panelId
+      ? ticketData.categoryId || null
+      : config.ticketCategoryId || null;
     let movedToOpenCategory = false;
     let openCategoryMoveFailed = false;
     
@@ -765,13 +784,14 @@ export async function deleteTicket(channel, deleter) {
         if (attachment) {
           try {
             const guildConfig = await getGuildConfig(channel.client, channel.guild.id);
-            if (!guildConfig.ticketTranscriptChannelId) {
+            const transcriptChannelId = ticketData.transcriptChannelId || guildConfig.ticketTranscriptChannelId;
+            if (!transcriptChannelId) {
               logger.warn('No transcript channel configured, skipping transcript send', {
                 channelId: channel.id,
                 ticketNumber: ticketData.id
               });
             } else {
-              const transcriptChannel = await channel.client.channels.fetch(guildConfig.ticketTranscriptChannelId).catch(() => null);
+              const transcriptChannel = await channel.client.channels.fetch(transcriptChannelId).catch(() => null);
               
               if (!transcriptChannel) {
                 logger.error('Could not fetch transcript channel', {

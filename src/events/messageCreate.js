@@ -1,4 +1,5 @@
 import { Events } from 'discord.js';
+import { applyFragmnAutoMod } from '../services/fragmnAutoModService.js';
 import { logger } from '../utils/logger.js';
 import { getLevelingConfig, getUserLevelData } from '../services/leveling/leveling.js';
 import { addXp } from '../services/leveling/xpSystem.js';
@@ -27,6 +28,9 @@ export default {
   async execute(message, client) {
     try {
       if (message.author.bot || !message.guild) return;
+
+      const autoModHandled = await applyFragmnAutoMod(message, client);
+      if (autoModHandled) return;
 
       logger.debug(`Message received from ${message.author.tag}: ${message.content}`);
 

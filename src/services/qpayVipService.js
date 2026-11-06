@@ -86,6 +86,9 @@ export async function createVipInvoice(client, { guildId, userId, tier }) {
   ensurePersistentDatabase(client);
   const config = getQPayConfig();
   const selected = getPackage(tier);
+  if (selected.key !== 'vip') {
+    throw new Error('EMPEROR болон BOSS багцууд дуудлага худалдаагаар олгогдоно. QPay худалдан авалт зөвхөн VIP-д боломжтой.');
+  }
   const senderInvoiceNo = 'FRAGMN-' + randomUUID().replace(/-/g, '').slice(0, 24);
 
   const response = await qpayPost('/v2/invoice', {

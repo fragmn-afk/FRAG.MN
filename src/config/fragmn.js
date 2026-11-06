@@ -11,8 +11,8 @@ export const fragmnConfig = Object.freeze({
   accentColor: Number.parseInt((process.env.FRAGMN_COLOR || '#E53935').replace('#', ''), 16),
   timezone: process.env.FRAGMN_TIMEZONE || 'Asia/Ulaanbaatar',
   vipPackages: Object.freeze({
-    vip: { name: 'VIP', price: readPrice('FRAGMN_VIP_PRICE', 10000), roleId: process.env.FRAGMN_VIP_ROLE_ID || null },
-    noble: { name: 'NOBLE', price: readPrice('FRAGMN_NOBLE_PRICE', 20000), roleId: process.env.FRAGMN_NOBLE_ROLE_ID || null },
+    vip: { name: 'VIP', price: readPrice('FRAGMN_VIP_PRICE', 350000), roleId: process.env.FRAGMN_VIP_ROLE_ID || null },
+    noble: { name: 'EMPEROR', price: readPrice('FRAGMN_NOBLE_PRICE', 20000), roleId: process.env.FRAGMN_NOBLE_ROLE_ID || null },
     boss: { name: 'BOSS', price: readPrice('FRAGMN_BOSS_PRICE', 30000), roleId: process.env.FRAGMN_BOSS_ROLE_ID || null },
   }),
 });

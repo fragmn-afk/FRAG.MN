@@ -53,7 +53,7 @@ async function handleAutoResponse(message, client) {
     if (!content) return false;
     const keyword = content.split(/\s+/, 1)[0].toLowerCase();
     const response = (Array.isArray(config.autoResponses) ? config.autoResponses : [])
-      .find((item) => item.enabled !== false && String(item.keyword).toLowerCase() === keyword);
+      .find((item) => item.enabled !== false && String(item.keyword).trim().replace(/^[!/-]+/, '').toLowerCase() === keyword);
 
     if (!response) return false;
 

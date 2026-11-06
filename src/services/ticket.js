@@ -973,7 +973,7 @@ export async function deleteTicket(channel, deleter) {
 export async function unclaimTicket(channel, unclaimer) {
   try {
     const ticketData = requireTicket(await getTicketData(channel.guild.id, channel.id), channel);
-    
+
     if (!ticketData.claimedBy) {
       ticketUserError(
         'Ticket not claimed',
@@ -982,7 +982,7 @@ export async function unclaimTicket(channel, unclaimer) {
         { channelId: channel.id, operation: 'unclaimTicket' }
       );
     }
-    
+
     if (ticketData.claimedBy !== unclaimer.id && !unclaimer.permissions.has(PermissionFlagsBits.ManageChannels)) {
       ticketUserError(
         'Cannot unclaim ticket',
@@ -991,61 +991,66 @@ export async function unclaimTicket(channel, unclaimer) {
         { channelId: channel.id, operation: 'unclaimTicket' }
       );
     }
-    
+
     const previousClaimer = ticketData.claimedBy;
+    const config = await getGuildConfig(channel.client, channel.guild.id);
+    const staffRoleId = ticketData.panelId
+      ? (ticketData.staffRoleId || null)
+      : (config.ticketStaffRoleId || null);
+
+    // Remove the previous claimant's reply permission; staff remain read-only.
+    if (previousClaimer !== ticketData.userId) {
+      await channel.permissionOverwrites.edit(previousClaimer, {
+        SendMessages: false,
+        AttachFiles: false,
+      }).catch(() => {});
+    }
+    if (staffRoleId) {
+      await channel.permissionOverwrites.edit(staffRoleId, {
+        ViewChannel: true,
+        ReadMessageHistory: true,
+        SendMessages: false,
+        AttachFiles: false,
+      });
+    }
+
     ticketData.claimedBy = null;
     ticketData.claimedAt = null;
-    
     await saveTicketData(channel.guild.id, channel.id, ticketData);
-    
+
     const messages = await channel.messages.fetch();
-    const ticketMessage = messages.find(m => 
-      m.embeds.length > 0 && 
+    const ticketMessage = messages.find(m =>
+      m.embeds.length > 0 &&
       m.embeds[0].title?.startsWith('Ticket #')
     );
-    
+
     if (ticketMessage) {
       const embed = ticketMessage.embeds[0];
       const claimedField = embed.fields?.find(f => f.name === 'Claimed By');
-      
-      if (claimedField) {
-        claimedField.value = 'Not claimed';
-      }
-      
-      const row = buildTicketControlRow();
-      
-      await ticketMessage.edit({ 
+      if (claimedField) claimedField.value = 'Not claimed';
+      await ticketMessage.edit({
         embeds: [embed],
-        components: [row] 
+        components: [buildTicketControlRow()]
       });
     }
-    
-    const claimMessage = messages.find(m => 
-      m.embeds.length > 0 && 
+
+    const claimMessage = messages.find(m =>
+      m.embeds.length > 0 &&
       (m.embeds[0].title === 'Ticket Claimed' || m.embeds[0].title === 'Ticket Unclaimed')
     );
-    
+
+    const unclaimEmbed = createEmbed({
+      title: 'Ticket Unclaimed',
+      description: `🔓 ${unclaimer} has unclaimed this ticket. Staff can view it, but only the next claimant can reply.`,
+      color: '#f39c12'
+    });
+
     if (claimMessage) {
-      const unclaimEmbed = createEmbed({
-        title: 'Ticket Unclaimed',
-        description: `🔓 ${unclaimer} has unclaimed this ticket!`,
-        color: '#f39c12'
-      });
-      
-      await claimMessage.edit({ 
-        embeds: [unclaimEmbed],
-        components: []
-      });
+      await claimMessage.edit({ embeds: [unclaimEmbed], components: [] });
     } else {
-      const unclaimEmbed = createEmbed({
-        title: 'Ticket Unclaimed',
-        description: `🔓 ${unclaimer} has unclaimed this ticket!`,
-        color: '#f39c12'
-      });
-      
       await channel.send({ embeds: [unclaimEmbed] });
     }
-    
+
     await logTicketEvent({
       client: channel.client,
       guildId: channel.guild.id,
@@ -1055,14 +1060,11 @@ export async function unclaimTicket(channel, unclaimer) {
         ticketNumber: ticketData.id,
         userId: ticketData.userId,
         executorId: unclaimer.id,
-        metadata: {
-          previousClaimer: previousClaimer
-        }
+        metadata: { previousClaimer }
       }
     });
-    
+
     return ticketData;
-    
   } catch (error) {
     rethrowTicketError(error, 'unclaimTicket', 'Failed to unclaim ticket. Please try again in a moment.', { guildId: channel?.guild?.id, channelId: channel?.id, unclaimerId: unclaimer?.id });
   }

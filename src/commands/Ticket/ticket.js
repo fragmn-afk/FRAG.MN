@@ -192,7 +192,7 @@ export default {
             const embed = createEmbed({
                 title: "🎫 Ticket Panels",
                 description: "Additional panel configurations for this server.",
-                color: getColor('info'),
+                color: '#720000',
                 fields,
             });
             return InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
@@ -303,7 +303,7 @@ export default {
                 const panelEmbed = createEmbed({
                     title: panel.name,
                     description: panel.panelMessage,
-                    color: getColor('info'),
+                    color: '#720000',
                 });
                 const panelButton = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
@@ -410,7 +410,7 @@ const dmOnClose = interaction.options.getBoolean("dm_on_close") !== false;
             const setupEmbed = createEmbed({ 
                 title: "Support Tickets", 
 description: panelMessage,
-                color: getColor('info')
+                color: '#720000'
             });
 
             const ticketButton = new ActionRowBuilder().addComponents(

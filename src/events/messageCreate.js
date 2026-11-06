@@ -1,4 +1,4 @@
-import { Events } from 'discord.js';
+import { Events, EmbedBuilder } from 'discord.js';
 import { logger } from '../utils/logger.js';
 import { parsePrefixCommand } from '../utils/prefixParser.js';
 import { supportsPrefixExecution, executePrefixCommand, resolvePrefixAccessKey } from '../utils/messageAdapter.js';
@@ -29,13 +29,50 @@ export default {
         return;
       }
 
-      await handlePrefixCommand(message, client);
+      const autoResponseSent = await handleAutoResponse(message, client);\n      if (autoResponseSent) return;\n\n      await handlePrefixCommand(message, client);
 
     } catch (error) {
       logger.error('Error in messageCreate event:', error);
     }
   }
 };
+
+
+async function handleAutoResponse(message, client) {
+  try {
+    const config = await getGuildConfig(client, message.guild.id);
+    if (config.autoResponsesEnabled === false) return false;
+
+    const prefix = config?.prefix || getCommandPrefix();
+    if (!prefix || !message.content.startsWith(prefix)) return false;
+
+    const content = message.content.slice(prefix.length).trimStart();
+    if (!content) return false;
+    const keyword = content.split(/\\s+/, 1)[0].toLowerCase();
+    const response = (Array.isArray(config.autoResponses) ? config.autoResponses : [])
+      .find((item) => item.enabled !== false && String(item.keyword).toLowerCase() === keyword);
+
+    if (!response) return false;
+
+    const color = /^#[0-9a-f]{6}$/i.test(response.color || '') ? response.color : '#720000';
+    const embed = new EmbedBuilder()
+      .setColor(color)
+      .setTitle(response.title || 'FRAG.MN')
+      .setDescription(response.description || 'Мэдээлэл байхгүй.');
+
+    if (response.footer) embed.setFooter({ text: String(response.footer).slice(0, 2048) });
+    if (response.image && /^https?:\\/\\//i.test(response.image)) embed.setImage(response.image);
+
+    await message.channel.send({
+      embeds: [embed],
+      allowedMentions: { parse: [] },
+    });
+    return true;
+  } catch (error) {
+    logger.error('Error handling auto response:', error);
+    return false;
+  }
+}
 
 async function handlePrefixCommand(message, client) {
   try {

@@ -138,7 +138,7 @@ async function confirmPayment(invoice) {
   const rows = Array.isArray(result.rows) ? result.rows : [];
   const paidRows = rows.filter((row) => {
     const status = String(row.payment_status || row.status || '').toUpperCase();
-    return !status || status === 'PAID' || status === 'SUCCESS';
+    return status === 'PAID' || status === 'SUCCESS';
   });
   const paidAmount = Number(result.paid_amount) ||
     paidRows.reduce((sum, row) => sum + (Number(row.payment_amount) || 0), 0);

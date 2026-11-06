@@ -163,7 +163,7 @@ const createTicketHandler = {
       if (currentTicketCount >= maxTicketsPerUser) {
         return await replyUserError(interaction, {
           type: ErrorTypes.UNKNOWN,
-          message: 'You have reached the maximum number of open tickets (' + maxTicketsPerUser + ') for this panel.\\n\\nCurrent Tickets: ' + currentTicketCount + '/' + maxTicketsPerUser,
+          message: 'You have reached the maximum number of open tickets (' + maxTicketsPerUser + ') for this panel.\n\nCurrent Tickets: ' + currentTicketCount + '/' + maxTicketsPerUser,
         });
       }
 

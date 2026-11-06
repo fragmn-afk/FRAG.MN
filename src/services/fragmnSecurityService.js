@@ -107,9 +107,9 @@ async function restrictActor(guild, executorId) {
   return { removed: ids, reason: null };
 }
 
-export async function handleAntiNukeAuditEntry(entry) {
-  if (!enabled('FRAGMN_ANTI_NUKE_ENABLED') || !entry?.guild || !entry.executorId || !nukeActions.has(entry.action)) return;
-  const guild = entry.guild;
+export async function handleAntiNukeAuditEntry(entry, eventGuild = null) {
+  const guild = eventGuild || entry?.guild || null;
+  if (!enabled('FRAGMN_ANTI_NUKE_ENABLED') || !guild || !entry?.executorId || !nukeActions.has(entry.action)) return;
   const executorId = entry.executorId;
   if (executorId === guild.client.user?.id || trustedUsers(guild).has(executorId)) return;
 

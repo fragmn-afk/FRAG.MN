@@ -1,5 +1,5 @@
 import {
-  SlashCommandBuilder,
+  SlashCommandSubcommandGroupBuilder,
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
@@ -10,7 +10,7 @@ import {
 import { fragmnConfig } from '../../config/fragmn.js';
 import { createVipInvoice, finalizeVipInvoice, getVipInvoiceForUser } from '../../services/qpayVipService.js';
 
-const data = new SlashCommandBuilder()
+export const vipGroup = new SlashCommandSubcommandGroupBuilder()
   .setName('vip')
   .setDescription('FRAG.MN VIP багц болон QPay төлбөр')
   .addSubcommand((s) => s.setName('plans').setDescription('VIP багцуудын үнэ харах'))
@@ -60,9 +60,7 @@ function buildStatusEmbed(invoice) {
     .setTimestamp(new Date(invoice.createdAt));
 }
 
-export default {
-  data,
-  async execute(interaction, config, client) {
+export async function executeVipCommand(interaction, config, client) {
     if (!interaction.inGuild()) {
       return interaction.reply({ content: 'Энэ командыг FRAG.MN Discord серверт ашиглана уу.', flags: MessageFlags.Ephemeral });
     }
@@ -142,5 +140,4 @@ export default {
     } catch (error) {
       return interaction.editReply({ content: 'Төлбөрийн төлөв шалгаж чадсангүй: ' + String(error.message || 'Алдаа').slice(0, 400) });
     }
-  },
-};
+}

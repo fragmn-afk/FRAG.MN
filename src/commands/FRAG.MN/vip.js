@@ -1,3 +1,4 @@
+export const commandGroupOnly = true;
 import {
   SlashCommandSubcommandGroupBuilder,
   EmbedBuilder,

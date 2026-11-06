@@ -65,12 +65,13 @@ export default {
                         .setRequired(false),
                 )
                 .addRoleOption((option) =>
-                    option
-                        .setName("staff_role")
-                        .setDescription(
-                            "The role that can access tickets (optional).",
-                        )
-                        .setRequired(false),
+                    option.setName("staff_role").setDescription("Primary staff role (optional).").setRequired(false),
+                )
+                .addRoleOption((option) =>
+                    option.setName("staff_role_2").setDescription("Second staff role (optional).").setRequired(false),
+                )
+                .addRoleOption((option) =>
+                    option.setName("staff_role_3").setDescription("Third staff role (optional).").setRequired(false),
                 )
                 .addIntegerOption((option) =>
                     option
@@ -102,7 +103,9 @@ export default {
                 .addStringOption((option) => option.setName("button_label").setDescription("Create button text").setRequired(false))
                 .addChannelOption((option) => option.setName("category").setDescription("Open ticket category").addChannelTypes(ChannelType.GuildCategory).setRequired(false))
                 .addChannelOption((option) => option.setName("closed_category").setDescription("Closed ticket category").addChannelTypes(ChannelType.GuildCategory).setRequired(false))
-                .addRoleOption((option) => option.setName("staff_role").setDescription("Staff role that can view tickets").setRequired(false))
+                .addRoleOption((option) => option.setName("staff_role").setDescription("Primary staff role that can view tickets").setRequired(false))
+                .addRoleOption((option) => option.setName("staff_role_2").setDescription("Second staff role (optional)").setRequired(false))
+                .addRoleOption((option) => option.setName("staff_role_3").setDescription("Third staff role (optional)").setRequired(false))
                 .addRoleOption((option) => option.setName("required_role").setDescription("Role required to open this panel").setRequired(false))
                 .addRoleOption((option) => option.setName("escalate_role").setDescription("Role to notify when a ticket is escalated").setRequired(false))
                 .addIntegerOption((option) => option.setName("max_tickets_per_user").setDescription("Maximum open tickets in this panel").setMinValue(1).setMaxValue(10).setRequired(false))
@@ -228,7 +231,12 @@ export default {
             const panelChannel = interaction.options.getChannel("panel_channel", true);
             const category = interaction.options.getChannel("category");
             const closedCategory = interaction.options.getChannel("closed_category");
-            const staffRole = interaction.options.getRole("staff_role");
+            const staffRoles = [
+                interaction.options.getRole("staff_role"),
+                interaction.options.getRole("staff_role_2"),
+                interaction.options.getRole("staff_role_3"),
+            ].filter(Boolean);
+            const uniqueStaffRoles = [...new Map(staffRoles.map((role) => [role.id, role])).values()];
             const requiredRole = interaction.options.getRole("required_role");
             const escalateRole = interaction.options.getRole("escalate_role");
             const transcriptChannel = interaction.options.getChannel("transcript_channel");
@@ -243,7 +251,7 @@ export default {
             if (!botMember) {
                 return replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: "Bot-ийн server member мэдээллийг авч чадсангүй." });
             }
-            for (const role of [staffRole, escalateRole].filter(Boolean)) {
+            for (const role of [...uniqueStaffRoles, escalateRole].filter(Boolean)) {
                 if (
                     role.id === interaction.guild.id ||
                     role.managed ||
@@ -275,7 +283,7 @@ export default {
                 buttonLabel,
                 categoryId: category?.id || null,
                 closedCategoryId: closedCategory?.id || null,
-                staffRoleId: staffRole?.id || null,
+                staffRoleId: uniqueStaffRoles[0]?.id || null,\n                staffRoleIds: uniqueStaffRoles.map((role) => role.id),
                 requiredRoleId: requiredRole?.id || null,
                 escalateRoleId: escalateRole?.id || null,
                 allowedRoleIds: [],
@@ -314,7 +322,7 @@ export default {
                     embeds: [successEmbed(
                         "Ticket Panel Created",
                         "**" + panel.name + "** panel-г " + panelChannel + " сувагт байршууллаа.\n\nPanel ID: `" + panelId +
-                        "`\nMax tickets: **" + maxTicketsPerUser + "**\nStaff: " + (staffRole ? staffRole.toString() : "Not set"),
+                        "`\nMax tickets: **" + maxTicketsPerUser + "**\nStaff: " + (uniqueStaffRoles.length ? uniqueStaffRoles.map((role) => role.toString()).join(", ") : "Not set"),
                     )],
                 });
             } catch (error) {
@@ -385,7 +393,12 @@ export default {
                 interaction.options.getChannel("panel_channel");
             const categoryChannel = interaction.options.getChannel("category");
             const closedCategoryChannel = interaction.options.getChannel("closed_category");
-            const staffRole = interaction.options.getRole("staff_role");
+            const staffRoles = [
+                interaction.options.getRole("staff_role"),
+                interaction.options.getRole("staff_role_2"),
+                interaction.options.getRole("staff_role_3"),
+            ].filter(Boolean);
+            const uniqueStaffRoles = [...new Map(staffRoles.map((role) => [role.id, role])).values()];
 const panelMessage = interaction.options.getString("panel_message") || "Click the button below to create a support ticket.";
             const buttonLabel =
                 interaction.options.getString("button_label") ||
@@ -417,7 +430,8 @@ description: panelMessage,
                     const currentConfig = existingConfig;
                     currentConfig.ticketCategoryId = categoryChannel ? categoryChannel.id : null;
                     currentConfig.ticketClosedCategoryId = closedCategoryChannel ? closedCategoryChannel.id : null;
-                    currentConfig.ticketStaffRoleId = staffRole ? staffRole.id : null;
+                    currentConfig.ticketStaffRoleId = uniqueStaffRoles[0]?.id || null;
+                    currentConfig.ticketStaffRoleIds = uniqueStaffRoles.map((role) => role.id);
                     currentConfig.ticketPanelChannelId = panelChannel.id;
                     currentConfig.ticketPanelMessageId = sentPanel?.id || null;
                     currentConfig.ticketPanelMessage = panelMessage;
@@ -430,7 +444,7 @@ description: panelMessage,
                         guildId: interaction.guildId,
                         categoryId: categoryChannel?.id,
                         closedCategoryId: closedCategoryChannel?.id,
-                        staffRoleId: staffRole?.id,
+                        staffRoleIds: uniqueStaffRoles.map((role) => role.id),
                         maxTickets: maxTicketsPerUser,
                         dmOnClose: dmOnClose,
                     });
@@ -452,8 +466,8 @@ description: panelMessage,
                     successMessage += `Closed tickets will be moved to **${closedCategoryChannel.name}**.`;
                 }
                 
-                if (staffRole) {
-                    successMessage += `**${staffRole.name}** role will have access to tickets.`;
+                if (uniqueStaffRoles.length) {
+                    successMessage += `**Staff roles:** ${uniqueStaffRoles.map((role) => role.name).join(", ")} will have access to tickets.`;
                 }
                 
                 successMessage += `\n\n**Max Tickets Per User:** ${maxTicketsPerUser}\n**DM on Close:** ${dmOnClose ? 'Enabled' : 'Disabled'}`;
@@ -507,8 +521,8 @@ description: panelMessage,
                         },
                         {
                             name: "Staff Role",
-                            value: staffRole
-                                ? staffRole.toString()
+                            value: uniqueStaffRoles.length
+                                ? uniqueStaffRoles.map((role) => role.toString()).join(", ")
                                 : "None specified.",
                             inline: true,
                         },

@@ -4,10 +4,11 @@ The legacy `/ticket setup` panel remains supported. Additional panels are manage
 
 ## Commands
 
-- `/ticket panel-create`: create a panel in a text channel with its own open/closed categories, staff role, required role, per-panel open ticket limit, DM-on-close setting, staff ping setting, transcript channel, and ticket log channel.
+- `/ticket panel-create`: create a panel in a text channel with its own open/closed categories, staff role, required role, escalation role, per-panel open ticket limit, DM-on-close setting, staff ping setting, transcript channel, and ticket log channel.
 - `/ticket panels`: list configured additional panels and their IDs.
 - `/ticket panel-access`: allow a role, remove an allowed role, block/unblock a role, or block/unblock a user for a panel.
 - `/ticket panel-delete`: remove a panel and its panel message. Existing tickets created from that panel are not deleted.
+- `/ticket-escalate`: from an open ticket channel, notify the configured escalation role and grant it channel access.
 
 The existing ticket lifecycle remains available: create, claim, unclaim, close, reopen, delete, transcript generation, ticket logs, and feedback collection.
 
@@ -17,7 +18,7 @@ A panel can require a role. Optional allowed-role entries act as an allowlist: w
 
 ## Per-panel settings
 
-Ticket records store their originating panel ID and relevant category, staff role, max-ticket, notification and transcript settings. These settings remain attached to existing tickets even if the panel is later edited or removed.
+Ticket records store their originating panel ID and relevant category, staff role, escalation role, max-ticket, notification and transcript settings. These settings remain attached to existing tickets even if the panel is later edited or removed.
 
 ## Permissions
 

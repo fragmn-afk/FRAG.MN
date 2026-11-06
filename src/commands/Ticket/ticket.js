@@ -228,9 +228,35 @@ export default {
             const logsChannel = interaction.options.getChannel("logs_channel");
             const maxTicketsPerUser = interaction.options.getInteger("max_tickets_per_user") || 3;
             const panelMessage = interaction.options.getString("panel_message", true).trim().slice(0, 4000);
-            const buttonLabel = (interaction.options.getString("button_label") || "Create Ticket").trim().slice(0, 80);
+            const buttonLabel = (interaction.options.getString("button_label") || "").trim().slice(0, 80) || "Create Ticket";
             const dmOnClose = interaction.options.getBoolean("dm_on_close") !== false;
             const autoPing = interaction.options.getBoolean("auto_ping") !== false;
+
+            const botMember = await interaction.guild.members.fetchMe().catch(() => null);
+            if (!botMember) {
+                return replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: "Bot-ийн server member мэдээллийг авч чадсангүй." });
+            }
+            for (const role of [staffRole, escalateRole].filter(Boolean)) {
+                if (
+                    role.id === interaction.guild.id ||
+                    role.managed ||
+                    role.permissions.has(PermissionFlagsBits.Administrator) ||
+                    role.position >= botMember.roles.highest.position
+                ) {
+                    return replyUserError(interaction, {
+                        type: ErrorTypes.VALIDATION,
+                        message: "Staff болон escalation role нь @everyone биш, managed/Admin биш, bot-ийн хамгийн өндөр role-оос доор байх ёстой.",
+                    });
+                }
+            }
+
+            const panelPermissions = panelChannel.permissionsFor(botMember);
+            if (!panelPermissions?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) {
+                return replyUserError(interaction, {
+                    type: ErrorTypes.PERMISSION,
+                    message: "Bot panel channel-д View Channel, Send Messages, Embed Links эрхтэй байх шаардлагатай.",
+                });
+            }
 
             const panelId = randomUUID().replace(/-/g, "").slice(0, 8);
             const panel = {

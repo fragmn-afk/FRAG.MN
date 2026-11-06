@@ -1,12 +1,16 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { fragmnConfig, mnNumber, discordTime } from '../../config/fragmn.js';
+import { staffGroup, executeStaffCommand } from './staff.js';
+import { vipGroup, executeVipCommand } from './vip.js';
 
 const data = new SlashCommandBuilder()
   .setName('fragmn').setDescription('FRAG.MN community мэдээлэл')
   .addSubcommand(s => s.setName('info').setDescription('Community-ийн тухай'))
   .addSubcommand(s => s.setName('server').setDescription('Серверийн мэдээлэл'))
   .addSubcommand(s => s.setName('member').setDescription('Гишүүний мэдээлэл')
-    .addUserOption(o => o.setName('user').setDescription('Мэдээллийг харах гишүүн').setRequired(false)));
+    .addUserOption(o => o.setName('user').setDescription('Мэдээллийг харах гишүүн').setRequired(false)))
+  .addSubcommandGroup(staffGroup)
+  .addSubcommandGroup(vipGroup);
 
 const embed = (title, description) => new EmbedBuilder().setColor(fragmnConfig.accentColor)
   .setTitle(title).setDescription(description).setFooter({text:'FRAG.MN • Монголын gaming community'}).setTimestamp();
@@ -15,6 +19,9 @@ export default {
   data,
   async execute(i) {
     if (!i.inGuild()) return i.reply({content:'Энэ командыг сервер дотор ашиглана уу.',flags:MessageFlags.Ephemeral});
+    const group = i.options.getSubcommandGroup(false);
+    if (group === 'staff') return executeStaffCommand(i);
+    if (group === 'vip') return executeVipCommand(i, undefined, i.client);
     const action=i.options.getSubcommand();
     if(action==='info'){
       const e=embed('⚡ FRAG.MN','**Монголын gaming & esports community**\nТоглоом, esports, найз нөхөд, community event-үүд нэг дор.')

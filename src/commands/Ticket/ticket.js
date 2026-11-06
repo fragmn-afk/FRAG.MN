@@ -104,6 +104,7 @@ export default {
                 .addChannelOption((option) => option.setName("closed_category").setDescription("Closed ticket category").addChannelTypes(ChannelType.GuildCategory).setRequired(false))
                 .addRoleOption((option) => option.setName("staff_role").setDescription("Staff role that can view tickets").setRequired(false))
                 .addRoleOption((option) => option.setName("required_role").setDescription("Role required to open this panel").setRequired(false))
+                .addRoleOption((option) => option.setName("escalate_role").setDescription("Role to notify when a ticket is escalated").setRequired(false))
                 .addIntegerOption((option) => option.setName("max_tickets_per_user").setDescription("Maximum open tickets in this panel").setMinValue(1).setMaxValue(10).setRequired(false))
                 .addBooleanOption((option) => option.setName("dm_on_close").setDescription("DM the ticket creator on close").setRequired(false))
                 .addBooleanOption((option) => option.setName("auto_ping").setDescription("Ping the configured staff role").setRequired(false))
@@ -222,6 +223,7 @@ export default {
             const closedCategory = interaction.options.getChannel("closed_category");
             const staffRole = interaction.options.getRole("staff_role");
             const requiredRole = interaction.options.getRole("required_role");
+            const escalateRole = interaction.options.getRole("escalate_role");
             const transcriptChannel = interaction.options.getChannel("transcript_channel");
             const logsChannel = interaction.options.getChannel("logs_channel");
             const maxTicketsPerUser = interaction.options.getInteger("max_tickets_per_user") || 3;
@@ -242,6 +244,7 @@ export default {
                 closedCategoryId: closedCategory?.id || null,
                 staffRoleId: staffRole?.id || null,
                 requiredRoleId: requiredRole?.id || null,
+                escalateRoleId: escalateRole?.id || null,
                 allowedRoleIds: [],
                 blacklistedRoleIds: [],
                 blacklistedUserIds: [],

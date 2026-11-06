@@ -118,7 +118,7 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
     }
     
     const ticketNumber = await getNextTicketNumber(guild.id);
-    const staffRoleId = panelOptions.staffRoleId ?? config.ticketStaffRoleId ?? null;
+    const staffRoleId = panelId ? (panelOptions.staffRoleId || null) : (config.ticketStaffRoleId || null);
     
     let channelName = `ticket-${ticketNumber}`;
     
@@ -784,7 +784,9 @@ export async function deleteTicket(channel, deleter) {
         if (attachment) {
           try {
             const guildConfig = await getGuildConfig(channel.client, channel.guild.id);
-            const transcriptChannelId = ticketData.transcriptChannelId || guildConfig.ticketTranscriptChannelId;
+            const transcriptChannelId = ticketData.panelId
+              ? (ticketData.transcriptChannelId || null)
+              : (guildConfig.ticketTranscriptChannelId || null);
             if (!transcriptChannelId) {
               logger.warn('No transcript channel configured, skipping transcript send', {
                 channelId: channel.id,

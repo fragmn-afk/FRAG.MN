@@ -2,6 +2,7 @@
 
 import { ChannelType } from 'discord.js';
 import { getGuildConfig } from '../../services/config/guildConfig.js';
+import { getTicketData } from '../database/tickets.js';
 import { logger } from '../logger.js';
 import {
   buildStandardLogEmbed,
@@ -18,8 +19,9 @@ export async function logTicketEvent({ client, guildId, event }) {
     }
 
     const config = await getGuildConfig(client, guildId);
+    const ticketData = event.ticketId ? await getTicketData(guildId, event.ticketId).catch(() => null) : null;
 
-    const logChannelId = getLogChannelForEventType(config, event.type);
+    const logChannelId = ticketData?.ticketLogsChannelId || getLogChannelForEventType(config, event.type);
     if (!logChannelId) {
       return;
     }

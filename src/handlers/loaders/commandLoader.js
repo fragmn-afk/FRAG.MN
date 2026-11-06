@@ -231,9 +231,7 @@ function prepareCommandsForRegistration(commands) {
     }
 
     logger.warn(`Command count (${commands.length}) exceeds Discord limit (${MAX_COMMANDS}), truncating...`);
-    const truncated = commands.slice(0, MAX_COMMANDS);
-    logger.info(`Truncated to ${truncated.length} commands for registration`);
-    return truncated;
+    throw new Error(`Refusing to register ${commands.length} global commands: Discord allows at most ${MAX_COMMANDS}. Consolidate commands instead of silently dropping features.`);
 }
 
 async function registerGlobalCommands(client, clientId, commands, totalSubcommands) {

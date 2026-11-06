@@ -488,7 +488,7 @@ description: panelMessage,
                     panelChannelId: panelChannel.id,
                     categoryId: categoryChannel?.id,
                     closedCategoryId: closedCategoryChannel?.id,
-                    staffRoleId: staffRole?.id,
+                    staffRoleIds: uniqueStaffRoles.map((role) => role.id),
                     maxTickets: maxTicketsPerUser,
                     dmOnClose: dmOnClose,
                     commandName: 'ticket_setup'

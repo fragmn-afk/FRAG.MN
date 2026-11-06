@@ -5,7 +5,7 @@ const readPrice = (key, fallback) => {
 
 export const fragmnConfig = Object.freeze({
   name: process.env.FRAGMN_NAME || 'FRAG.MN',
-  tagline: process.env.FRAGMN_TAGLINE || 'Монголын gaming & esports community',
+  tagline: process.env.FRAGMN_TAGLINE || 'Монголын Counter Strike-2 Community',
   inviteUrl: process.env.FRAGMN_INVITE_URL || 'https://discord.gg/fragmn',
   websiteUrl: process.env.FRAGMN_WEBSITE_URL || null,
   accentColor: Number.parseInt((process.env.FRAGMN_COLOR || '#E53935').replace('#', ''), 16),

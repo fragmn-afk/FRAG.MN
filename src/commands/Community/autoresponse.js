@@ -95,7 +95,7 @@ export default {
         return interaction.reply({ content: 'Одоогоор keyword тохируулаагүй байна.', ephemeral: true });
       }
       const lines = responses.map((item) => `• \`${config.prefix || '!'}${item.keyword}\` — ${item.title} (${item.enabled === false ? 'OFF' : 'ON'})`);
-      return interaction.reply({ content: `**Auto Response keywords**\\n${lines.join('\\n')}`, ephemeral: true });
+      return interaction.reply({ content: `**Auto Response keywords**\n${lines.join('\n')}`, ephemeral: true });
     }
 
     if (subcommand === 'toggle') {

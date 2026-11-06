@@ -1,6 +1,6 @@
 import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, AttachmentBuilder, MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed } from '../utils/embeds.js';
-import { createTicket, closeTicket, claimTicket, updateTicketPriority } from '../services/ticket.js';
+import { createTicket, closeTicket, deleteTicket, claimTicket, updateTicketPriority } from '../services/ticket.js';
 import { getGuildConfig } from '../services/config/guildConfig.js';
 import { logTicketEvent } from '../utils/ticket/ticketLogging.js';
 import { logger } from '../utils/logger.js';
@@ -250,27 +250,24 @@ const closeTicketHandler = {
 
       await assertTicketPermission(interaction, client, 'close this ticket', { allowTicketCreator: true }, 2000);
 
-      const modal = new ModalBuilder()
-        .setCustomId('ticket_close_modal')
-        .setTitle('Close Ticket');
+      const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+      if (!deferSuccess) return;
 
-      const reasonInput = new TextInputBuilder()
-        .setCustomId('reason')
-        .setLabel('Reason for closing (optional)')
-        .setStyle(TextInputStyle.Paragraph)
-        .setPlaceholder('Add an optional reason for closing this ticket...')
-        .setRequired(false)
-        .setMaxLength(1000);
+      // Closing no longer requires a reason. Close the ticket, then queue
+      // its transcript and automatic channel deletion.
+      const reason = 'Closed without a reason.';
+      await closeTicket(interaction.channel, interaction.user, reason);
+      await deleteTicket(interaction.channel, interaction.user);
 
-      const actionRow = new ActionRowBuilder().addComponents(reasonInput);
-      modal.addComponents(actionRow);
-
-      await interaction.showModal(modal);
+      await interaction.editReply({
+        embeds: [successEmbed('Ticket Closed', 'Ticket closed successfully. It will be automatically deleted after the transcript process.')],
+      });
     } catch (error) {
       logger.error('Error closing ticket:', error);
-
       if (!interaction.replied && !interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Could not open ticket close form.' });
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Could not close and delete this ticket.' });
+      } else if (interaction.deferred) {
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Could not close and delete this ticket.' });
       }
     }
   }

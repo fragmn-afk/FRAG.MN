@@ -214,6 +214,7 @@ const createTicketModalHandler = {
         panelId: panel.id,
         maxTicketsPerUser: panel.maxTicketsPerUser,
         staffRoleId: panel.staffRoleId,
+        staffRoleIds: panel.staffRoleIds || [panel.staffRoleId].filter(Boolean),
         closedCategoryId: panel.closedCategoryId,
         dmOnClose: panel.dmOnClose,
         autoPing: panel.autoPing,

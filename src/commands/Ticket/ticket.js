@@ -138,7 +138,7 @@ export default {
                     ))
                 .addRoleOption((option) => option.setName("role").setDescription("Role for this access rule").setRequired(false))
                 .addUserOption((option) => option.setName("user").setDescription("User for this access rule").setRequired(false)),
-        ),
+        )
         .addSubcommand((subcommand) => subcommand
             .setName('escalate')
             .setDescription('Escalate the current ticket to its configured escalation role')

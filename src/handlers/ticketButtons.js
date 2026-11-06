@@ -219,6 +219,7 @@ const createTicketModalHandler = {
         autoPing: panel.autoPing,
         transcriptChannelId: panel.transcriptChannelId,
         ticketLogsChannelId: panel.ticketLogsChannelId,
+        escalateRoleId: panel.escalateRoleId,
       } : {};
 
       const { channel } = await createTicket(

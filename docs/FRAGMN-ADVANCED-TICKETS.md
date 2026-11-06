@@ -8,7 +8,7 @@ The legacy `/ticket setup` panel remains supported. Additional panels are manage
 - `/ticket panels`: list configured additional panels and their IDs.
 - `/ticket panel-access`: allow a role, remove an allowed role, block/unblock a role, or block/unblock a user for a panel.
 - `/ticket panel-delete`: remove a panel and its panel message. Existing tickets created from that panel are not deleted.
-- `/ticket-escalate`: from an open ticket channel, notify the configured escalation role and grant it channel access.
+- `/ticket escalate`: from an open ticket channel, notify the configured escalation role and grant it channel access.
 
 The existing ticket lifecycle remains available: create, claim, unclaim, close, reopen, delete, transcript generation, ticket logs, and feedback collection.
 

@@ -1,23 +1,9 @@
-import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  MessageFlags,
-} from 'discord.js';
+import { PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { getGuildConfig } from '../../services/config/guildConfig.js';
 import { getTicketData } from '../../utils/database.js';
 import { escalateTicket } from '../../services/ticket.js';
 
-export default {
-  data: new SlashCommandBuilder()
-    .setName('ticket-escalate')
-    .setDescription('Escalate the current ticket to its configured escalation role')
-    .addStringOption((option) => option
-      .setName('reason')
-      .setDescription('Why this ticket needs escalation')
-      .setRequired(false)),
-  category: 'Ticket',
-
-  async execute(interaction, config, client) {
+export async function executeTicketEscalation(interaction, client) {
     if (!interaction.inGuild()) {
       return interaction.reply({
         content: 'Энэ командыг ticket сувгийн дотор серверт ашиглана уу.',
@@ -59,5 +45,4 @@ export default {
     } catch (error) {
       return interaction.editReply('Эскалац амжилтгүй: ' + String(error.message || 'Алдаа').slice(0, 350));
     }
-  },
-};
+}

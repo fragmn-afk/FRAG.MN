@@ -488,7 +488,7 @@ export async function escalateTicket(channel, escalator, reason = 'Staff escalat
     await saveTicketData(channel.guild.id, channel.id, ticketData);
 
     await channel.send({
-      content: '<@&' + roleId + '> • Ticket escalated by <@' + escalator.id + '>\\nReason: ' + ticketData.escalationReason,
+      content: '<@&' + roleId + '> • Ticket escalated by <@' + escalator.id + '>\nReason: ' + ticketData.escalationReason,
       allowedMentions: { roles: [roleId], users: [escalator.id] },
     });
 

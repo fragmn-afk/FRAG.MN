@@ -94,6 +94,7 @@ function getLogChannelForEventType(config, eventType) {
     case 'pin':
     case 'unpin':
     case 'feedback':
+    case 'escalate':
       return config.ticketLogsChannelId || null;
 
     default:
@@ -110,6 +111,7 @@ const TICKET_EVENT_STYLES = {
   priority: { color: 0x9b59b6, title: 'Priority Updated' },
   transcript: { color: 0x57F287, title: 'Transcript Generated' },
   feedback: { color: 0x57F287, title: 'Feedback Received' },
+  escalate: { color: 0xE67E22, title: 'Ticket Escalated' },
 };
 
 async function createTicketLogEmbed(guild, event) {

@@ -11,5 +11,5 @@ export const GUILD_CONFIG_DEFAULTS = {
     welcomeMessage: BotConfig.welcome?.defaultWelcomeMessage || 'Welcome {user} to {server}!',
     dmOnClose: true,
     disabledCommands: {},
-    disabledCategories: {},
+    disabledCategories: {},\n    autoResponses: [],\n    autoResponsesEnabled: true,
 };

@@ -17,11 +17,11 @@ const embed = (title, description) => new EmbedBuilder().setColor(fragmnConfig.a
 
 export default {
   data,
-  async execute(i) {
+  async execute(i, config, client) {
     if (!i.inGuild()) return i.reply({content:'Энэ командыг сервер дотор ашиглана уу.',flags:MessageFlags.Ephemeral});
     const group = i.options.getSubcommandGroup(false);
     if (group === 'staff') return executeStaffCommand(i);
-    if (group === 'vip') return executeVipCommand(i, undefined, i.client);
+    if (group === 'vip') return executeVipCommand(i, config, client);
     const action=i.options.getSubcommand();
     if(action==='info'){
       const e=embed('⚡ FRAG.MN','**Монголын gaming & esports community**\nТоглоом, esports, найз нөхөд, community event-үүд нэг дор.')

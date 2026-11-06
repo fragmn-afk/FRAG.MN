@@ -32,3 +32,13 @@ FRAGMN_TIMEZONE=Asia/Ulaanbaatar
 
 ## Existing feature-үүд
 Ticket, moderation, logging, welcome, verification, leveling, giveaway, economy, music, server stats зэрэг TitanBot системийг солихгүй, дахин эхлүүлэхгүй.
+
+
+## Түр идэвхгүй Slash Command ангиллууд
+
+Discord-ийн global slash command жагсаалтыг цөөлөх зорилгоор дараах ангиллын командуудыг loader-оос түр хассан:
+- Birthday
+- Leveling
+- Economy
+
+Эдгээрийн command файлууд, service, event болон database өгөгдлийг устгаагүй. Зөвхөн slash command-уудыг Discord-д бүртгүүлэхгүй. Дахин идэвхжүүлэхдээ `src/handlers/loaders/commandLoader.js` доторх `DISABLED_COMMAND_CATEGORIES` жагсаалтаас тухайн ангиллыг хасна.

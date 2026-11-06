@@ -10,10 +10,22 @@ function buildWebsiteEmbed() {
     .setURL(WEBSITE_URL)
     .setDescription(
       'FRAG.MN-ийн албан ёсны вебсайтаар зочлоорой.\n\n' +
-      'Мэдээлэл, community болон бусад боломжуудтай танилцахын тулд доорх товчийг дарна уу.'
+      '**Website sections**\n' +
+      '• Play\n' +
+      '• Skin Changer\n' +
+      '• Shop\n' +
+      '• Clans\n' +
+      '• Leaderboard\n' +
+      '• Matches\n' +
+      '• Staff\n' +
+      '• Fair play\n' +
+      '• Guide\n' +
+      '• Terms of Service\n' +
+      '• Admin\n' +
+      '• Discord'
     )
     .addFields({
-      name: '🔗 Website',
+      name: '🔗 Official Website',
       value: '[https://frag.mn](https://frag.mn)',
       inline: false,
     })

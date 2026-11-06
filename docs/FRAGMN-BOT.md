@@ -41,5 +41,7 @@ Discord-ийн global slash command жагсаалтыг цөөлөх зорил
 - Leveling
 - Economy
 - Fun
+- JoinToCreate
+- Music
 
 Эдгээрийн command файлууд, service, event болон database өгөгдлийг устгаагүй. Зөвхөн slash command-уудыг Discord-д бүртгүүлэхгүй. Дахин идэвхжүүлэхдээ `src/handlers/loaders/commandLoader.js` доторх `DISABLED_COMMAND_CATEGORIES` жагсаалтаас тухайн ангиллыг хасна.

@@ -13,7 +13,7 @@ const COMMAND_COUNT_WARN_THRESHOLD = 90;
 // Keep these feature implementations and data intact, but do not publish
 // their slash commands to Discord until they are explicitly re-enabled.
 const DISABLED_COMMAND_CATEGORIES = new Set(['Birthday', 'Leveling', 'Economy', 'Fun', 'JoinToCreate', 'Music', 'ServerStats', 'Search']);
-const DISABLED_COMMAND_FILES = new Set(['wipedata.js', 'todo.js', 'weather.js', 'usernotes.js', 'uptime.js', 'generatepassword.js', 'report.js', 'time.js']);
+const DISABLED_COMMAND_FILES = new Set(['wipedata.js', 'todo.js', 'weather.js', 'usernotes.js', 'uptime.js', 'generatepassword.js', 'report.js', 'time.js', 'unixtime.js', 'support.js', 'shorten.js', 'priority.js', 'commands.js', 'cases.js', 'calculate.js', 'baseconvert.js', 'verify.js', 'apply.js']);
 
 function getSubcommandInfo(commandData) {
     const subcommands = [];

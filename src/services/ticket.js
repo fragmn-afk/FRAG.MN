@@ -178,6 +178,7 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
         autoPing: panelOptions.autoPing !== false,
         transcriptChannelId: panelOptions.transcriptChannelId || null,
         ticketLogsChannelId: panelOptions.ticketLogsChannelId || null,
+        escalateRoleId: panelOptions.escalateRoleId || null,
       } : {}),
     };
     
@@ -432,6 +433,85 @@ components: []
     
   } catch (error) {
     rethrowTicketError(error, 'closeTicket', 'Failed to close ticket. Please try again in a moment.', { guildId: channel?.guild?.id, channelId: channel?.id, closerId: closer?.id });
+  }
+}
+
+export async function escalateTicket(channel, escalator, reason = 'Staff escalation requested') {
+  try {
+    const ticketData = requireTicket(await getTicketData(channel.guild.id, channel.id), channel);
+    if (ticketData.status !== 'open') {
+      ticketUserError('Cannot escalate closed ticket', 'Only open tickets can be escalated.', ErrorTypes.VALIDATION, {
+        channelId: channel.id,
+        operation: 'escalateTicket',
+      });
+    }
+
+    const roleId = ticketData.escalateRoleId || null;
+    if (!roleId) {
+      ticketUserError('Escalation role not configured', 'This ticket panel does not have an escalation role configured.', ErrorTypes.CONFIGURATION, {
+        guildId: channel.guild.id,
+        channelId: channel.id,
+        operation: 'escalateTicket',
+      });
+    }
+
+    const role = channel.guild.roles.cache.get(roleId) ||
+      await channel.guild.roles.fetch(roleId).catch(() => null);
+    if (!role) {
+      ticketUserError('Escalation role missing', 'The configured escalation role no longer exists.', ErrorTypes.CONFIGURATION, {
+        guildId: channel.guild.id,
+        channelId: channel.id,
+        roleId,
+        operation: 'escalateTicket',
+      });
+    }
+
+    const botMember = channel.guild.members.me;
+    if (!botMember?.permissions.has(PermissionFlagsBits.ManageChannels)) {
+      ticketUserError('Missing Manage Channels', 'The bot needs Manage Channels permission to escalate this ticket.', ErrorTypes.PERMISSION, {
+        guildId: channel.guild.id,
+        channelId: channel.id,
+        operation: 'escalateTicket',
+      });
+    }
+
+    await channel.permissionOverwrites.edit(role, {
+      ViewChannel: true,
+      SendMessages: true,
+      ReadMessageHistory: true,
+      AttachFiles: true,
+    }, { reason: 'Ticket escalated by ' + (escalator?.tag || escalator?.id || 'staff') });
+
+    ticketData.escalatedAt = new Date().toISOString();
+    ticketData.escalatedBy = escalator.id;
+    ticketData.escalationReason = String(reason || 'Staff escalation requested').slice(0, 500);
+    await saveTicketData(channel.guild.id, channel.id, ticketData);
+
+    await channel.send({
+      content: '<@&' + roleId + '> • Ticket escalated by <@' + escalator.id + '>\\nReason: ' + ticketData.escalationReason,
+      allowedMentions: { roles: [roleId], users: [escalator.id] },
+    });
+
+    await logTicketEvent({
+      client: channel.client,
+      guildId: channel.guild.id,
+      event: {
+        type: 'escalate',
+        ticketId: channel.id,
+        ticketNumber: ticketData.id,
+        userId: ticketData.userId,
+        executorId: escalator.id,
+        reason: ticketData.escalationReason,
+      },
+    });
+
+    return ticketData;
+  } catch (error) {
+    rethrowTicketError(error, 'escalateTicket', 'Failed to escalate ticket. Please try again.', {
+      guildId: channel?.guild?.id,
+      channelId: channel?.id,
+      escalatorId: escalator?.id,
+    });
   }
 }
 

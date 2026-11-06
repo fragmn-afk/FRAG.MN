@@ -21,7 +21,9 @@ export async function logTicketEvent({ client, guildId, event }) {
     const config = await getGuildConfig(client, guildId);
     const ticketData = event.ticketId ? await getTicketData(guildId, event.ticketId).catch(() => null) : null;
 
-    const logChannelId = ticketData?.ticketLogsChannelId || getLogChannelForEventType(config, event.type);
+    const logChannelId = ticketData?.panelId
+      ? (ticketData.ticketLogsChannelId || null)
+      : getLogChannelForEventType(config, event.type);
     if (!logChannelId) {
       return;
     }

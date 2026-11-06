@@ -750,51 +750,34 @@ async function generateTranscript(channel) {
 
     messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
-    const escape = (str) =>
-      String(str ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-
-    const rows = messages.map((msg) => {
-      const ts = new Date(msg.createdTimestamp).toISOString().replace('T', ' ').slice(0, 19);
-      const author = escape(msg.author?.tag ?? msg.author?.username ?? 'Unknown');
-      const content = escape(msg.content || (msg.embeds.length ? '[embed]' : '[attachment]'));
-      return `<tr><td class="ts">${ts}</td><td class="author">${author}</td><td class="msg">${content}</td></tr>`;
-    }).join('\n');
-
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transcript – #${escape(channel.name)}</title>
-<style>
-body{font-family:sans-serif;background:#36393f;color:#dcddde;margin:0;padding:16px}
-h1{color:#fff;font-size:1.2rem;margin-bottom:8px}
-table{width:100%;border-collapse:collapse;font-size:0.85rem}
-th{background:#2f3136;color:#8e9297;padding:6px 8px;text-align:left;border-bottom:2px solid #202225}
-td{padding:4px 8px;border-bottom:1px solid #40444b;vertical-align:top}
-.ts{color:#72767d;white-space:nowrap;width:160px}
-.author{color:#7289da;white-space:nowrap;width:160px}
-.msg{word-break:break-word}
-</style>
-</head>
-<body>
-<h1>📜 Transcript – #${escape(channel.name)}</h1>
-<p style="color:#72767d">${messages.length} message(s) exported on ${new Date().toUTCString()}</p>
-<table>
-<thead><tr><th>Timestamp (UTC)</th><th>Author</th><th>Message</th></tr></thead>
-<tbody>
-${rows}
-</tbody>
-</table>
-</body>
-</html>`;
-
-    const buffer = Buffer.from(html, 'utf8');
-    const attachment = new AttachmentBuilder(buffer, { name: `ticket-${channel.id}.html` });
+    const transcriptLines = [
+      `Ticket Transcript - #${channel.name}`,
+      `Ticket ID: ${channel.id}`,
+      `Exported: ${new Date().toISOString()}`,
+      `Messages: ${messages.length}`,
+      '',
+      ...messages.flatMap((msg) => {
+        const timestamp = new Date(msg.createdTimestamp).toISOString().replace('T', ' ').slice(0, 19);
+        const author = msg.author?.tag ?? msg.author?.username ?? 'Unknown';
+        const content = msg.content?.trim() || (msg.embeds.length ? '[Embed]' : '');
+        const attachments = [...msg.attachments.values()].map((item) => item.url);
+        const embedDetails = msg.embeds.map((embed) => [
+          embed.title ? `Embed: ${embed.title}` : '',
+          embed.description || '',
+          embed.url || '',
+        ].filter(Boolean).join(' | ')).filter(Boolean);
+        const body = [content, ...embedDetails, ...attachments.map((url) => `Attachment: ${url}`)]
+          .filter(Boolean);
+        return [
+          `[${timestamp} UTC] ${author}`,
+          ...(body.length ? body : ['[No text content]']),
+          '',
+        ];
+      }),
+    ];
+    const transcript = transcriptLines.join('\\n');
+    const buffer = Buffer.from(transcript, 'utf8');
+    const attachment = new AttachmentBuilder(buffer, { name: `ticket-${channel.id}.txt` });
 
     logger.info('✅ Successfully generated transcript', {
       channelId: channel.id,

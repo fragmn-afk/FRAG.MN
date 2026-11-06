@@ -19,8 +19,7 @@ export const vipGroup = new SlashCommandSubcommandGroupBuilder()
     .addStringOption((o) => o.setName('tier').setDescription('Авах VIP багц').setRequired(true)
       .addChoices(
         { name: 'VIP', value: 'vip' },
-        { name: 'NOBLE', value: 'noble' },
-        { name: 'BOSS', value: 'boss' },
+        
       )))
   .addSubcommand((s) => s.setName('status').setDescription('Сүүлийн QPay төлбөрийн төлөв харах')
     .addStringOption((o) => o.setName('invoice_id').setDescription('Нэхэмжлэхийн ID (сонголтоор)').setRequired(false)));
@@ -34,13 +33,13 @@ function buildPlansEmbed() {
   return new EmbedBuilder()
     .setColor(fragmnConfig.accentColor)
     .setTitle('⚡ FRAG.MN VIP багцууд')
-    .setDescription('Өөрт тохирох багцаа сонгоод QPay QR-аар төлбөрөө төлнө үү.')
+    .setDescription('VIP багцыг QPay-аар авах боломжтой. EMPEROR болон BOSS багцууд дуудлага худалдаагаар олгогдоно.')
     .addFields(
-      { name: 'VIP', value: formatPrice(packages.vip.price), inline: true },
-      { name: 'NOBLE', value: formatPrice(packages.noble.price), inline: true },
-      { name: 'BOSS', value: formatPrice(packages.boss.price), inline: true },
+      { name: 'VIP • 1 MONTH', value: formatPrice(packages.vip.price), inline: true },
+      { name: 'EMPEROR • ДУУДЛАГА', value: 'Эхлэх үнэ: **0₮**', inline: true },
+      { name: 'BOSS • ДУУДЛАГА', value: 'Эхлэх үнэ: **400,000₮**', inline: true },
     )
-    .setFooter({ text: 'Төлбөр баталгаажсаны дараа role автоматаар олгогдоно.' });
+    .setFooter({ text: 'EMPEROR болон BOSS-ийн дуудлага худалдааны мэдээллийг staff-аас авна уу.' });
 }
 
 function buildStatusEmbed(invoice) {

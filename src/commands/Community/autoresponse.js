@@ -5,7 +5,7 @@ const MAX_RESPONSES = 25;
 const DEFAULT_COLOR = '#720000';
 
 function normalizeKeyword(value) {
-  return String(value || '').trim().replace(/^!/, '').toLowerCase();
+  return String(value || '').trim().replace(/^[!/-]+/, '').toLowerCase();
 }
 
 function buildResponseEmbed(item) {

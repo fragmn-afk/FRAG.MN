@@ -14,7 +14,9 @@ export async function getTicketPermissionContext({ client, interaction }) {
   ]);
 
   const hasManageChannels = interaction.member.permissions.has(PermissionFlagsBits.ManageChannels);
-  const staffRoleId = config.ticketStaffRoleId || null;
+  const staffRoleId = ticketData?.panelId
+    ? (ticketData.staffRoleId || null)
+    : (config.ticketStaffRoleId || null);
   const hasTicketStaffRole = Boolean(staffRoleId && interaction.member.roles?.cache?.has(staffRoleId));
   const isTicketCreator = Boolean(
     ticketData?.userId && String(ticketData.userId) === String(interaction.user.id),

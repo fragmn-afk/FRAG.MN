@@ -2,6 +2,7 @@
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import { REST } from '@discordjs/rest';
 import express from 'express';
+import { createQPayRouter } from './routes/qpay.js';
 import cron from 'node-cron';
 
 import config from './config/application.js';
@@ -33,7 +34,8 @@ class TitanBot extends Client {
 
         GatewayIntentBits.GuildVoiceStates,             
 
-        GatewayIntentBits.GuildBans,                    
+        GatewayIntentBits.GuildBans,
+        GatewayIntentBits.GuildModeration,                    
       ],
     });
 
@@ -155,6 +157,9 @@ class TitanBot extends Client {
       requestCounts.set(ip, times);
       next();
     });
+
+    // Keep the payment callback behind the shared API rate limiter.
+    app.use('/api/qpay', express.json({ limit: '32kb' }), createQPayRouter(this));
 
     app.get('/health', (req, res) => {
       const dbStatus = this.db?.getStatus?.() || { isDegraded: 'unknown' };

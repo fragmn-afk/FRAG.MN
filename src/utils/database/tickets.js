@@ -13,7 +13,7 @@ export async function getTicketData(guildId, channelId) {
     return await db.get(key);
 }
 
-export async function getOpenTicketCountForUser(guildId, userId) {
+export async function getOpenTicketCountForUser(guildId, userId, panelId = null) {
     try {
         if (!db.initialized) {
             await db.initialize();
@@ -21,12 +21,15 @@ export async function getOpenTicketCountForUser(guildId, userId) {
 
         if (db.db?.pool && typeof db.db.isAvailable === 'function' && db.db.isAvailable()) {
             const { pgConfig } = await import('../../config/database/postgres.js');
+            const panelFilter = panelId ? "AND data->>'panelId' = $3" : '';
+            const values = panelId ? [guildId, userId, panelId] : [guildId, userId];
             const result = await db.db.pool.query(
                 `SELECT COUNT(*)::int AS count FROM ${pgConfig.tables.tickets}
                  WHERE guild_id = $1
                    AND data->>'userId' = $2
-                   AND data->>'status' = 'open'`,
-                [guildId, userId],
+                   AND data->>'status' = 'open'
+                   ${panelFilter}`,
+                values,
             );
 
             return Number(result.rows?.[0]?.count || 0);
@@ -39,7 +42,7 @@ export async function getOpenTicketCountForUser(guildId, userId) {
             for (const key of ticketKeys) {
                 if (key.endsWith(':counter')) continue;
                 const ticket = await getFromDb(key, null);
-                if (ticket && ticket.userId === userId && ticket.status === 'open') {
+                if (ticket && ticket.userId === userId && ticket.status === 'open' && (!panelId || ticket.panelId === panelId)) {
                     count += 1;
                 }
             }

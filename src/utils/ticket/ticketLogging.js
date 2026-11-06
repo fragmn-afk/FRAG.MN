@@ -2,6 +2,7 @@
 
 import { ChannelType } from 'discord.js';
 import { getGuildConfig } from '../../services/config/guildConfig.js';
+import { getTicketData } from '../database/tickets.js';
 import { logger } from '../logger.js';
 import {
   buildStandardLogEmbed,
@@ -18,8 +19,11 @@ export async function logTicketEvent({ client, guildId, event }) {
     }
 
     const config = await getGuildConfig(client, guildId);
+    const ticketData = event.ticketId ? await getTicketData(guildId, event.ticketId).catch(() => null) : null;
 
-    const logChannelId = getLogChannelForEventType(config, event.type);
+    const logChannelId = ticketData?.panelId
+      ? (ticketData.ticketLogsChannelId || null)
+      : getLogChannelForEventType(config, event.type);
     if (!logChannelId) {
       return;
     }
@@ -90,6 +94,7 @@ function getLogChannelForEventType(config, eventType) {
     case 'pin':
     case 'unpin':
     case 'feedback':
+    case 'escalate':
       return config.ticketLogsChannelId || null;
 
     default:
@@ -106,6 +111,7 @@ const TICKET_EVENT_STYLES = {
   priority: { color: 0x9b59b6, title: 'Priority Updated' },
   transcript: { color: 0x57F287, title: 'Transcript Generated' },
   feedback: { color: 0x57F287, title: 'Feedback Received' },
+  escalate: { color: 0xE67E22, title: 'Ticket Escalated' },
 };
 
 async function createTicketLogEmbed(guild, event) {

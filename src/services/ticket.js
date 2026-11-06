@@ -151,9 +151,11 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
           id: staffRoleId,
           allow: [
             PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.ReadMessageHistory,
+          ],
+          deny: [
             PermissionFlagsBits.SendMessages,
             PermissionFlagsBits.AttachFiles,
-            PermissionFlagsBits.ReadMessageHistory,
           ],
         }] : []),
       ],
@@ -518,7 +520,7 @@ export async function escalateTicket(channel, escalator, reason = 'Staff escalat
 export async function claimTicket(channel, claimer) {
   try {
     const ticketData = requireTicket(await getTicketData(channel.guild.id, channel.id), channel);
-    
+
     if (ticketData.claimedBy) {
       ticketUserError(
         'Ticket already claimed',
@@ -527,40 +529,53 @@ export async function claimTicket(channel, claimer) {
         { channelId: channel.id, claimedBy: ticketData.claimedBy, operation: 'claimTicket' }
       );
     }
-    
+
+    const config = await getGuildConfig(channel.client, channel.guild.id);
+    const staffRoleId = ticketData.panelId
+      ? (ticketData.staffRoleId || null)
+      : (config.ticketStaffRoleId || null);
+
+    // Staff can view and read every ticket, but only its claimant can reply.
+    if (staffRoleId) {
+      await channel.permissionOverwrites.edit(staffRoleId, {
+        ViewChannel: true,
+        ReadMessageHistory: true,
+        SendMessages: false,
+        AttachFiles: false,
+      });
+    }
+    await channel.permissionOverwrites.edit(claimer.id, {
+      ViewChannel: true,
+      ReadMessageHistory: true,
+      SendMessages: true,
+      AttachFiles: true,
+    });
+
     ticketData.claimedBy = claimer.id;
     ticketData.claimedAt = new Date().toISOString();
-    
     await saveTicketData(channel.guild.id, channel.id, ticketData);
-    
+
     const messages = await channel.messages.fetch();
-    const ticketMessage = messages.find(m => 
-      m.embeds.length > 0 && 
+    const ticketMessage = messages.find(m =>
+      m.embeds.length > 0 &&
       m.embeds[0].title?.startsWith('Ticket #')
     );
-    
+
     if (ticketMessage) {
       const embed = ticketMessage.embeds[0];
       const claimedField = embed.fields?.find(f => f.name === 'Claimed By');
-      
-      if (claimedField) {
-        claimedField.value = claimer.toString();
-      }
-      
+      if (claimedField) claimedField.value = claimer.toString();
+
       const row = buildTicketControlRow({ claimedBy: claimer.id });
-      
-      await ticketMessage.edit({ 
-        embeds: [embed],
-        components: [row] 
-      });
+      await ticketMessage.edit({ embeds: [embed], components: [row] });
     }
-    
+
     const claimEmbed = createEmbed({
       title: 'Ticket Claimed',
-      description: `🎉 ${claimer} has claimed this ticket!`,
+      description: `🎉 ${claimer} has claimed this ticket! Other staff can view the conversation, but only the claimant can reply.`,
       color: '#2ecc71'
     });
-    
+
     const unclaimRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('ticket_unclaim')
@@ -579,7 +594,7 @@ export async function claimTicket(channel, claimer) {
     } else {
       await channel.send({ embeds: [claimEmbed], components: [unclaimRow] });
     }
-    
+
     await logTicketEvent({
       client: channel.client,
       guildId: channel.guild.id,
@@ -589,14 +604,11 @@ export async function claimTicket(channel, claimer) {
         ticketNumber: ticketData.id,
         userId: ticketData.userId,
         executorId: claimer.id,
-        metadata: {
-          claimedAt: ticketData.claimedAt
-        }
+        metadata: { claimedAt: ticketData.claimedAt }
       }
     });
-    
+
     return ticketData;
-    
   } catch (error) {
     rethrowTicketError(error, 'claimTicket', 'Failed to claim ticket. Please try again in a moment.', { guildId: channel?.guild?.id, channelId: channel?.id, claimerId: claimer?.id });
   }

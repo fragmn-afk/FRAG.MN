@@ -64,7 +64,7 @@ async function handleAutoResponse(message, client) {
       .setDescription(response.description || 'Мэдээлэл байхгүй.');
 
     if (response.footer) embed.setFooter({ text: String(response.footer).slice(0, 2048) });
-    if (response.image && /^https?:\\/\\//i.test(response.image)) embed.setImage(response.image);
+    if (response.image && /^https?:\/\//i.test(response.image)) embed.setImage(response.image);
 
     await message.channel.send({
       embeds: [embed],

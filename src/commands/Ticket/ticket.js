@@ -120,6 +120,23 @@ export default {
                 .setName("panel-delete")
                 .setDescription("Delete a ticket panel by its ID")
                 .addStringOption((option) => option.setName("panel_id").setDescription("Panel ID shown by /ticket panels").setRequired(true)),
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("panel-access")
+                .setDescription("Manage roles and users allowed or blocked from a panel")
+                .addStringOption((option) => option.setName("panel_id").setDescription("Panel ID").setRequired(true))
+                .addStringOption((option) => option.setName("action").setDescription("Access rule to update").setRequired(true)
+                    .addChoices(
+                        { name: "Allow Role", value: "allow-role" },
+                        { name: "Remove Allowed Role", value: "remove-allow-role" },
+                        { name: "Block Role", value: "deny-role" },
+                        { name: "Unblock Role", value: "remove-deny-role" },
+                        { name: "Block User", value: "deny-user" },
+                        { name: "Unblock User", value: "allow-user" },
+                    ))
+                .addRoleOption((option) => option.setName("role").setDescription("Role for this access rule").setRequired(false))
+                .addUserOption((option) => option.setName("user").setDescription("User for this access rule").setRequired(false)),
         ),
     category: "ticket",
 
@@ -276,6 +293,50 @@ export default {
                     message: "Ticket panel үүсгэж/хадгалж чадсангүй. Bot-ийн channel permission болон database connection-ийг шалгана уу.",
                 });
             }
+        }
+
+        if (subcommand === "panel-access") {
+            const guildConfig = await getGuildConfig(client, interaction.guildId);
+            const panelId = interaction.options.getString("panel_id", true);
+            const action = interaction.options.getString("action", true);
+            const role = interaction.options.getRole("role");
+            const user = interaction.options.getUser("user");
+            const panels = Array.isArray(guildConfig.ticketPanels) ? [...guildConfig.ticketPanels] : [];
+            const panel = panels.find((item) => item.id === panelId);
+            if (!panel) {
+                return replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: "Panel ID олдсонгүй. /ticket panels ашиглана уу." });
+            }
+
+            const roleActions = ["allow-role", "remove-allow-role", "deny-role", "remove-deny-role"];
+            const userActions = ["deny-user", "allow-user"];
+            if (roleActions.includes(action) && !role) {
+                return replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: "Энэ үйлдэлд role сонгоно уу." });
+            }
+            if (userActions.includes(action) && !user) {
+                return replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: "Энэ үйлдэлд user сонгоно уу." });
+            }
+
+            const updateList = (property, value, add) => {
+                const current = Array.isArray(panel[property]) ? [...panel[property]] : [];
+                const index = current.indexOf(value);
+                if (add && index === -1) current.push(value);
+                if (!add && index !== -1) current.splice(index, 1);
+                panel[property] = current;
+            };
+
+            if (action === "allow-role") updateList("allowedRoleIds", role.id, true);
+            if (action === "remove-allow-role") updateList("allowedRoleIds", role.id, false);
+            if (action === "deny-role") updateList("blacklistedRoleIds", role.id, true);
+            if (action === "remove-deny-role") updateList("blacklistedRoleIds", role.id, false);
+            if (action === "deny-user") updateList("blacklistedUserIds", user.id, true);
+            if (action === "allow-user") updateList("blacklistedUserIds", user.id, false);
+
+            guildConfig.ticketPanels = panels;
+            await setGuildConfig(client, interaction.guildId, guildConfig);
+            const subject = role ? role.toString() : user.toString();
+            return InteractionHelper.safeEditReply(interaction, {
+                embeds: [successEmbed("Ticket Panel Access Updated", action + " applied to " + subject + " for panel **" + panel.name + "**.")],
+            });
         }
 
         if (subcommand === "setup") {

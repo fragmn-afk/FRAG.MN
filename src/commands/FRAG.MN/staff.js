@@ -1,15 +1,14 @@
 import {
-  SlashCommandBuilder,
+  SlashCommandSubcommandGroupBuilder,
   PermissionFlagsBits,
   MessageFlags,
   EmbedBuilder,
 } from 'discord.js';
 import { addStaffRecord, getStaffRecords } from '../../services/fragmnStaffService.js';
 
-const data = new SlashCommandBuilder()
-  .setName('frag-staff')
+export const staffGroup = new SlashCommandSubcommandGroupBuilder()
+  .setName('staff')
   .setDescription('FRAG.MN staff хэрэгслүүд')
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
   .addSubcommand(s => s.setName('purge').setDescription('Сүүлийн мессежүүд устгах')
     .addIntegerOption(o => o.setName('amount').setDescription('1–100 мессеж').setMinValue(1).setMaxValue(100).setRequired(true)))
   .addSubcommand(s => s.setName('slowmode').setDescription('Slowmode тохируулах')
@@ -97,9 +96,7 @@ async function manageStaffRole(interaction, action) {
   ));
 }
 
-export default {
-  data,
-  async execute(interaction) {
+export async function executeStaffCommand(interaction) {
     if (!interaction.inGuild()) return interaction.reply(ephemeral('Энэ командыг серверт ашиглана уу.'));
     const action = interaction.options.getSubcommand();
 
@@ -171,5 +168,4 @@ export default {
     } catch (error) {
       return interaction.reply(ephemeral('Үйлдэл амжилтгүй: ' + String(error.message || 'Алдаа').slice(0, 300))).catch(() => {});
     }
-  },
-};
+}

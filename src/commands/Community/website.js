@@ -38,7 +38,7 @@ export default {
     .setName('website')
     .setDescription('FRAG.MN албан ёсны website холбоосыг Embed хэлбэрээр харуулах'),
 
-  async execute(interaction) {
+  async prefixExecute(interaction) {\n    const row = new ActionRowBuilder().addComponents(\n      new ButtonBuilder()\n        .setLabel('Visit Website')\n        .setStyle(ButtonStyle.Link)\n        .setURL(WEBSITE_URL)\n        .setEmoji('🌐')\n    );\n\n    return interaction.reply({\n      embeds: [buildWebsiteEmbed()],\n      components: [row],\n      allowedMentions: { parse: [] },\n    });\n  },\n\n  async execute(interaction) {
     if (!interaction.inGuild()) {
       return interaction.reply({
         content: 'Энэ командыг FRAG.MN Discord серверт ашиглана уу.',

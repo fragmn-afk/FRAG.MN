@@ -10,6 +10,10 @@ const __dirname = path.dirname(__filename);
 const MAX_COMMANDS = 100;
 const COMMAND_COUNT_WARN_THRESHOLD = 90;
 
+// Keep these feature implementations and data intact, but do not publish
+// their slash commands to Discord until they are explicitly re-enabled.
+const DISABLED_COMMAND_CATEGORIES = new Set(['Birthday', 'Leveling', 'Economy']);
+
 function getSubcommandInfo(commandData) {
     const subcommands = [];
     
@@ -39,7 +43,10 @@ async function getAllFiles(directory, fileList = []) {
         const filePath = path.join(directory, file.name);
         
         if (file.isDirectory()) {
-            if (file.name === 'modules') {
+            if (file.name === 'modules' || DISABLED_COMMAND_CATEGORIES.has(file.name)) {
+                if (DISABLED_COMMAND_CATEGORIES.has(file.name)) {
+                    logger.info(`Skipping disabled slash command category: ${file.name}`);
+                }
                 continue;
             }
             await getAllFiles(filePath, fileList);

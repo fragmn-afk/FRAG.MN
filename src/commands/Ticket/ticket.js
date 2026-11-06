@@ -8,12 +8,12 @@ import { logger } from '../../utils/logger.js';
 import { handleInteractionError, replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 
 import ticketConfig from './modules/ticket_dashboard.js';
+import { executeTicketEscalation } from './ticket-escalate.js';
 
 export default {
     data: new SlashCommandBuilder()
         .setName("ticket")
         .setDescription("Manages the server's ticket system.")
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
         .addSubcommand((subcommand) =>
             subcommand
                 .setName("setup")
@@ -139,9 +139,18 @@ export default {
                 .addRoleOption((option) => option.setName("role").setDescription("Role for this access rule").setRequired(false))
                 .addUserOption((option) => option.setName("user").setDescription("User for this access rule").setRequired(false)),
         ),
+        .addSubcommand((subcommand) => subcommand
+            .setName('escalate')
+            .setDescription('Escalate the current ticket to its configured escalation role')
+            .addStringOption((option) => option.setName('reason').setDescription('Why this ticket needs escalation').setRequired(false))),
     category: "ticket",
 
     async execute(interaction, config, client) {
+        const subcommand = interaction.options.getSubcommand();
+        if (subcommand === 'escalate') {
+            return executeTicketEscalation(interaction, client);
+        }
+
         const deferred = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
         if (!deferred) {
             return;
@@ -159,8 +168,6 @@ export default {
             });
             return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the `Manage Channels` permission for this action.' });
         }
-
-        const subcommand = interaction.options.getSubcommand();
 
         if (subcommand === "dashboard") {
             return ticketConfig.execute(interaction, config, client);

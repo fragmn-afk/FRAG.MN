@@ -6,11 +6,11 @@
 - `/fragmn info` — community танилцуулга, invite холбоос
 - `/fragmn server` — серверийн мэдээлэл
 - `/fragmn member [user]` — гишүүний мэдээлэл, role, нэгдсэн огноо
-- `/frag-staff purge amount` — сүүлийн 1–100 мессежийг устгах
-- `/frag-staff slowmode seconds` — 0–21600 секунд slowmode
-- `/frag-staff lock`, `/frag-staff unlock` — сувгийн бичих эрхийг удирдах
+- `/fragmn staff purge amount`, `/fragmn staff slowmode seconds`, `/fragmn staff lock`, `/fragmn staff unlock` — staff сувгийн хэрэгслүүд
+- `/fragmn staff role-add`, `/fragmn staff role-remove`, `/fragmn staff record`, `/fragmn staff records` — staff role болон бүртгэл
+- `/fragmn vip plans`, `/fragmn vip buy`, `/fragmn vip status` — QPay VIP багц, худалдан авалт, төлөв
 
-Staff командууд Discord-ийн Manage Messages болон Manage Channels эрхээр хамгаалагдсан. Purge нь Discord-ийн 14 хоногийн bulk-delete хязгаарыг дагана.
+Staff командууд Discord-ийн Manage Messages, Manage Channels болон Manage Roles эрхээр дэд командаас хамааран хамгаалагдсан. Purge нь Discord-ийн 14 хоногийн bulk-delete хязгаарыг дагана.
 
 ## Нэмэлт environment тохиргоо
 ```env

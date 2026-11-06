@@ -12,7 +12,7 @@ const COMMAND_COUNT_WARN_THRESHOLD = 90;
 
 // Keep these feature implementations and data intact, but do not publish
 // their slash commands to Discord until they are explicitly re-enabled.
-const DISABLED_COMMAND_CATEGORIES = new Set(['Birthday', 'Leveling', 'Economy', 'Fun', 'JoinToCreate', 'Music']);
+const DISABLED_COMMAND_CATEGORIES = new Set(['Birthday', 'Leveling', 'Economy', 'Fun', 'JoinToCreate', 'Music', 'ServerStats', 'Search']);
 
 function getSubcommandInfo(commandData) {
     const subcommands = [];

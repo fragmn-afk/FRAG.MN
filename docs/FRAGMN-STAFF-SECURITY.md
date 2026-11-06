@@ -14,7 +14,7 @@ Set FRAGMN_STAFF_ROLE_IDS to comma-separated staff role IDs in hosting environme
 
 Disabled by default. Enable with FRAGMN_ANTI_RAID_ENABLED=true. The bot detects join bursts using FRAGMN_ANTI_RAID_THRESHOLD and FRAGMN_ANTI_RAID_WINDOW_MS.
 
-Optional FRAGMN_ANTI_RAID_QUARANTINE_ROLE_ID applies a quarantine role to recent joiners after the threshold is reached. Configure that role manually so it grants no privileged permissions and restricts access only to the intended channels.
+Optional FRAGMN_ANTI_RAID_QUARANTINE_ROLE_ID applies a quarantine role only to accounts younger than FRAGMN_ANTI_RAID_MIN_ACCOUNT_AGE_HOURS after the join threshold is reached (default 24 hours). Set the age threshold to 0 to quarantine every new joiner in the detected burst. Configure the quarantine role manually so it grants no privileged permissions and restricts access only to the intended channels.
 
 ## Anti-Nuke
 

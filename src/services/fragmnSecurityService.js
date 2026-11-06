@@ -52,22 +52,25 @@ export async function handleAntiRaidJoin(member) {
   const threshold = envNumber('FRAGMN_ANTI_RAID_THRESHOLD', 8, 3, 100);
   let bucket = joinBuckets.get(guildId);
   if (!bucket || now - bucket.startedAt > windowMs) {
-    bucket = { startedAt: now, memberIds: [], alerted: false };
+    bucket = { startedAt: now, members: [], alerted: false };
     joinBuckets.set(guildId, bucket);
   }
-  bucket.memberIds.push(member.id);
-  if (bucket.memberIds.length < threshold) return;
+  const minAge = envNumber('FRAGMN_ANTI_RAID_MIN_ACCOUNT_AGE_HOURS', 24, 0, 8760);
+  const accountAgeHours = (now - member.user.createdTimestamp) / 3600000;
+  bucket.members.push({ id: member.id, accountAgeHours });
+  if (bucket.members.length < threshold) return;
 
   if (!bucket.alerted) {
     bucket.alerted = true;
-    const ageHours = (now - member.user.createdTimestamp) / 3600000;
-    const minAge = envNumber('FRAGMN_ANTI_RAID_MIN_ACCOUNT_AGE_HOURS', 24, 0, 8760);
+    const youngAccounts = bucket.members.filter((entry) => entry.accountAgeHours < minAge).length;
     await sendAlert(member.guild, '🚨 Anti-Raid: бөөнөөр нэгдэх хөдөлгөөн',
-      'Сүүлийн ' + Math.round(windowMs / 1000) + ' секундэд **' + bucket.memberIds.length +
-      '** гишүүн нэгдлээ. Босго: **' + threshold + '**.\nСүүлийн гишүүний account age: ' +
-      ageHours.toFixed(1) + ' цаг (тохируулсан доод нас: ' + minAge + ' цаг).')
+      'Сүүлийн ' + Math.round(windowMs / 1000) + ' секундэд **' + bucket.members.length +
+      '** гишүүн нэгдлээ. Босго: **' + threshold + '**.\n' +
+      '**' + youngAccounts + '** account нь ' + minAge + ' цагаас шинэ байна.')
       .catch(error => logger.warn('Anti-Raid alert failed', { error: error.message }));
-    logger.warn('FRAG.MN anti-raid threshold reached', { guildId, count: bucket.memberIds.length, threshold, windowMs });
+    logger.warn('FRAG.MN anti-raid threshold reached', {
+      guildId, count: bucket.members.length, youngAccounts, threshold, windowMs,
+    });
   }
 
   const quarantineRoleId = process.env.FRAGMN_ANTI_RAID_QUARANTINE_ROLE_ID;
@@ -81,7 +84,10 @@ export async function handleAntiRaidJoin(member) {
     return;
   }
 
-  for (const userId of bucket.memberIds) {
+  const quarantineTargets = bucket.members.filter((entry) =>
+    minAge === 0 || entry.accountAgeHours < minAge,
+  );
+  for (const { id: userId } of quarantineTargets) {
     const joinedMember = member.guild.members.cache.get(userId) ||
       await member.guild.members.fetch(userId).catch(() => null);
     if (!joinedMember || joinedMember.roles.cache.has(role.id)) continue;

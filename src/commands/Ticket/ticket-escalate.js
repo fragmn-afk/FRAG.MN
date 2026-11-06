@@ -1,3 +1,4 @@
+export const commandGroupOnly = true;
 import { PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { getGuildConfig } from '../../services/config/guildConfig.js';
 import { getTicketData } from '../../utils/database.js';

@@ -29,7 +29,10 @@ export default {
         return;
       }
 
-      const autoResponseSent = await handleAutoResponse(message, client);\n      if (autoResponseSent) return;\n\n      await handlePrefixCommand(message, client);
+      const autoResponseSent = await handleAutoResponse(message, client);
+      if (autoResponseSent) return;
+
+      await handlePrefixCommand(message, client);
 
     } catch (error) {
       logger.error('Error in messageCreate event:', error);

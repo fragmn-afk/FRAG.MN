@@ -118,7 +118,10 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
     }
     
     const ticketNumber = await getNextTicketNumber(guild.id);
-    const staffRoleId = panelId ? (panelOptions.staffRoleId || null) : (config.ticketStaffRoleId || null);
+    const staffRoleIds = panelId
+      ? (Array.isArray(panelOptions.staffRoleIds) ? panelOptions.staffRoleIds : [panelOptions.staffRoleId].filter(Boolean))
+      : (Array.isArray(config.ticketStaffRoleIds) ? config.ticketStaffRoleIds : [config.ticketStaffRoleId].filter(Boolean));
+    const uniqueStaffRoleIds = [...new Set(staffRoleIds.filter(Boolean))].slice(0, 3);
     
     let channelName = `ticket-${ticketNumber}`;
     
@@ -147,17 +150,11 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
             PermissionFlagsBits.ReadMessageHistory,
           ],
         },
-        ...(staffRoleId ? [{
-          id: staffRoleId,
-          allow: [
-            PermissionFlagsBits.ViewChannel,
-            PermissionFlagsBits.ReadMessageHistory,
-          ],
-          deny: [
-            PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.AttachFiles,
-          ],
-        }] : []),
+        ...uniqueStaffRoleIds.map((roleId) => ({
+          id: roleId,
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory],
+          deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles],
+        })),
       ],
     });
     
@@ -174,7 +171,8 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
         panelId,
         categoryId: category?.id || null,
         closedCategoryId: panelOptions.closedCategoryId || null,
-        staffRoleId,
+        staffRoleId: uniqueStaffRoleIds[0] || null,
+        staffRoleIds: uniqueStaffRoleIds,
         maxTicketsPerUser,
         dmOnClose: panelOptions.dmOnClose !== false,
         autoPing: panelOptions.autoPing !== false,
@@ -216,7 +214,7 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
       );
     }
     
-    const staffMention = staffRoleId && panelOptions.autoPing !== false ? ` <@&${staffRoleId}>` : '';
+    const staffMention = panelOptions.autoPing !== false ? uniqueStaffRoleIds.map((roleId) => `<@&${roleId}>`).join(' ') : '';
     const messageContent = `${member.toString()}${staffMention}`;
     
     const ticketMessage = await channel.send({ 
@@ -531,13 +529,13 @@ export async function claimTicket(channel, claimer) {
     }
 
     const config = await getGuildConfig(channel.client, channel.guild.id);
-    const staffRoleId = ticketData.panelId
-      ? (ticketData.staffRoleId || null)
-      : (config.ticketStaffRoleId || null);
+    const staffRoleIds = ticketData.panelId
+      ? (Array.isArray(ticketData.staffRoleIds) ? ticketData.staffRoleIds : [ticketData.staffRoleId].filter(Boolean))
+      : (Array.isArray(config.ticketStaffRoleIds) ? config.ticketStaffRoleIds : [config.ticketStaffRoleId].filter(Boolean));
 
-    // Staff can view and read every ticket, but only its claimant can reply.
-    if (staffRoleId) {
-      await channel.permissionOverwrites.edit(staffRoleId, {
+    // All configured staff roles can view; only the claimant can reply.
+    for (const roleId of [...new Set(staffRoleIds.filter(Boolean))].slice(0, 3)) {
+      await channel.permissionOverwrites.edit(roleId, {
         ViewChannel: true,
         ReadMessageHistory: true,
         SendMessages: false,
@@ -977,9 +975,9 @@ export async function unclaimTicket(channel, unclaimer) {
 
     const previousClaimer = ticketData.claimedBy;
     const config = await getGuildConfig(channel.client, channel.guild.id);
-    const staffRoleId = ticketData.panelId
-      ? (ticketData.staffRoleId || null)
-      : (config.ticketStaffRoleId || null);
+    const staffRoleIds = ticketData.panelId
+      ? (Array.isArray(ticketData.staffRoleIds) ? ticketData.staffRoleIds : [ticketData.staffRoleId].filter(Boolean))
+      : (Array.isArray(config.ticketStaffRoleIds) ? config.ticketStaffRoleIds : [config.ticketStaffRoleId].filter(Boolean));
 
     // Remove the previous claimant's reply permission; staff remain read-only.
     if (previousClaimer !== ticketData.userId) {
@@ -988,8 +986,8 @@ export async function unclaimTicket(channel, unclaimer) {
         AttachFiles: false,
       }).catch(() => {});
     }
-    if (staffRoleId) {
-      await channel.permissionOverwrites.edit(staffRoleId, {
+    for (const roleId of [...new Set(staffRoleIds.filter(Boolean))].slice(0, 3)) {
+      await channel.permissionOverwrites.edit(roleId, {
         ViewChannel: true,
         ReadMessageHistory: true,
         SendMessages: false,

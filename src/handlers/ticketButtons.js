@@ -209,7 +209,7 @@ const createTicketModalHandler = {
       if (!deferSuccess) return;
 
       const reason = interaction.fields.getTextInputValue('reason');
-      const categoryId = panel?.categoryId || config.ticketCategoryId || null;
+      const categoryId = panel ? (panel.categoryId || null) : (config.ticketCategoryId || null);
       const panelOptions = panel ? {
         panelId: panel.id,
         maxTicketsPerUser: panel.maxTicketsPerUser,

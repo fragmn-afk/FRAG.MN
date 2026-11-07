@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder } from 'discord.js';
 import { patchGuildConfig, getGuildConfig } from '../../services/config/guildConfig.js';
 import { successEmbed, infoEmbed } from '../../utils/embeds.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
@@ -67,7 +67,20 @@ export default {
       reason: `Honeypot channel configured by ${interaction.user.tag}`,
     });
 
-    await patchGuildConfig(client, interaction.guildId, { honeypotChannelId: channel.id });
+    const warningEmbed = new EmbedBuilder()
+      .setColor('#2B2D31')
+      .setTitle('🍯 DO NOT SEND MESSAGES IN THIS CHANNEL')
+      .setDescription('This channel is used to catch spam bots. Any messages sent here will result in **a softban.**')
+      .addFields({ name: '🍯 Kicks', value: String(current.honeypotKicks || 0), inline: false });
+
+    const warningMessage = await channel.send({ embeds: [warningEmbed] });
+    await warningMessage.pin().catch(() => {});
+
+    await patchGuildConfig(client, interaction.guildId, {
+      honeypotChannelId: channel.id,
+      honeypotMessageId: warningMessage.id,
+      honeypotKicks: current.honeypotKicks || 0,
+    });
 
     return InteractionHelper.universalReply(interaction, {
       embeds: [

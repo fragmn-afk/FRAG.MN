@@ -9,6 +9,8 @@ import { getCommandPrefix, getBotMessage, isBotOwner, isCommandCategoryEnabled, 
 import { enforceAbuseProtection, formatCooldownDuration } from '../utils/abuseProtection.js';
 import { createEmbed } from '../utils/embeds.js';
 import { isCommandEnabled } from '../services/commandAccessService.js';
+import { logModerationAction } from '../utils/moderation.js';
+import { PermissionFlagsBits } from 'discord.js';
 import {
   getCountingGameConfig,
   saveCountingGameConfig,
@@ -23,6 +25,9 @@ export default {
       if (message.author.bot || !message.guild) return;
 
       logger.debug(`Message received from ${message.author.tag}: ${message.content}`);
+
+      const honeypotProcessed = await handleHoneypot(message, client);
+      if (honeypotProcessed) return;
 
       const countingProcessed = await handleCountingGame(message, client);
       if (countingProcessed) {
@@ -211,6 +216,65 @@ async function handleCountingGame(message, client) {
     return true;
   } catch (error) {
     logger.error('Error handling counting game:', error);
+    return false;
+  }
+}
+
+
+async function handleHoneypot(message, client) {
+  try {
+    const config = await getGuildConfig(client, message.guild.id);
+    const honeypotChannelId = config.honeypotChannelId;
+    if (!honeypotChannelId || message.channel.id !== honeypotChannelId) return false;
+
+    const member = message.member || await message.guild.members.fetch(message.author.id).catch(() => null);
+    const isExempt = message.guild.ownerId === message.author.id
+      || isBotOwner(message.author.id)
+      || member?.permissions?.has(PermissionFlagsBits.Administrator)
+      || member?.permissions?.has(PermissionFlagsBits.ManageGuild)
+      || member?.permissions?.has(PermissionFlagsBits.ManageMessages);
+
+    if (isExempt) {
+      await message.delete().catch(() => {});
+      return true;
+    }
+
+    const reason = 'Honeypot channel trigger — automatic softban';
+    await message.delete().catch(() => {});
+
+    try {
+      await message.guild.members.ban(message.author.id, {
+        deleteMessageSeconds: 7 * 24 * 60 * 60,
+        reason,
+      });
+
+      await logModerationAction({
+        client,
+        guild: message.guild,
+        event: {
+          action: 'Member Softbanned',
+          target: `${message.author.tag} (${message.author.id})`,
+          executor: `FRAG.MN Honeypot (${client.user.tag})`,
+          reason,
+          metadata: {
+            userId: message.author.id,
+            channelId: message.channel.id,
+            deleteMessageSeconds: 604800,
+            automatic: true,
+          },
+        },
+      });
+
+      await message.guild.members.unban(message.author.id, 'Honeypot softban completed').catch((error) => {
+        logger.error('Honeypot softban unban failed; user remains banned:', error);
+      });
+    } catch (error) {
+      logger.error('Honeypot softban failed:', error);
+    }
+
+    return true;
+  } catch (error) {
+    logger.error('Error handling honeypot message:', error);
     return false;
   }
 }

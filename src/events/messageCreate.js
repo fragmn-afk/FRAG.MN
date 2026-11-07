@@ -232,7 +232,8 @@ async function handleHoneypot(message, client) {
       || isBotOwner(message.author.id)
       || member?.permissions?.has(PermissionFlagsBits.Administrator)
       || member?.permissions?.has(PermissionFlagsBits.ManageGuild)
-      || member?.permissions?.has(PermissionFlagsBits.ManageMessages);
+      || member?.permissions?.has(PermissionFlagsBits.ManageMessages)
+      || (member && [config.modRole, config.adminRole, ...(config.ticketStaffRoleIds || [])].filter(Boolean).some((roleId) => member.roles.cache.has(roleId)));
 
     if (isExempt) {
       await message.delete().catch(() => {});
@@ -248,22 +249,26 @@ async function handleHoneypot(message, client) {
         reason,
       });
 
-      await logModerationAction({
-        client,
-        guild: message.guild,
-        event: {
-          action: 'Member Softbanned',
-          target: `${message.author.tag} (${message.author.id})`,
-          executor: `FRAG.MN Honeypot (${client.user.tag})`,
-          reason,
-          metadata: {
-            userId: message.author.id,
-            channelId: message.channel.id,
-            deleteMessageSeconds: 604800,
-            automatic: true,
+      try {
+        await logModerationAction({
+          client,
+          guild: message.guild,
+          event: {
+            action: 'Member Softbanned',
+            target: `${message.author.tag} (${message.author.id})`,
+            executor: `FRAG.MN Honeypot (${client.user.tag})`,
+            reason,
+            metadata: {
+              userId: message.author.id,
+              channelId: message.channel.id,
+              deleteMessageSeconds: 604800,
+              automatic: true,
+            },
           },
-        },
-      });
+        });
+      } catch (logError) {
+        logger.error('Failed to write honeypot moderation log:', logError);
+      }
 
       await message.guild.members.unban(message.author.id, 'Honeypot softban completed').catch((error) => {
         logger.error('Honeypot softban unban failed; user remains banned:', error);

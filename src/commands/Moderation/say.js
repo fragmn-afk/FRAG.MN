@@ -10,6 +10,7 @@ import { logger } from '../../utils/logger.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 import { sanitizeInput } from '../../utils/validation.js';
+import { isBotOwner } from '../../config/bot.js';
 
 const TEXT_CHANNEL_TYPES = [
     ChannelType.GuildText,
@@ -47,12 +48,18 @@ export default {
                 .addChannelTypes(...TEXT_CHANNEL_TYPES)
                 .setRequired(false),
         )
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
         .setDMPermission(false),
     category: 'moderation',
     abuseProtection: { maxAttempts: 8, windowMs: 60_000 },
 
     async execute(interaction, _config, client) {
+        if (!isBotOwner(interaction.user.id)) {
+            return interaction.reply({
+                content: '⛔ Энэ командыг зөвхөн Bot Owner ашиглах боломжтой.',
+                ephemeral: true,
+            });
+        }
+
         const deferSuccess = await InteractionHelper.safeDefer(interaction, {
             flags: MessageFlags.Ephemeral,
         });

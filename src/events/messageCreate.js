@@ -4,7 +4,7 @@ import { parsePrefixCommand } from '../utils/prefixParser.js';
 import { supportsPrefixExecution, executePrefixCommand, resolvePrefixAccessKey } from '../utils/messageAdapter.js';
 import { resolveCommandAlias, resolveSubcommandAlias } from '../config/commands/commandAliases.js';
 import { getPrefixRestriction } from '../config/commands/prefixRestrictions.js';
-import { getGuildConfig } from '../services/config/guildConfig.js';
+import { getGuildConfig, patchGuildConfig } from '../services/config/guildConfig.js';
 import { getCommandPrefix, getBotMessage, isBotOwner, isCommandCategoryEnabled, isMaintenanceMode } from '../config/bot.js';
 import { enforceAbuseProtection, formatCooldownDuration } from '../utils/abuseProtection.js';
 import { createEmbed } from '../utils/embeds.js';
@@ -273,6 +273,8 @@ async function handleHoneypot(message, client) {
       await message.guild.members.unban(message.author.id, 'Honeypot softban completed').catch((error) => {
         logger.error('Honeypot softban unban failed; user remains banned:', error);
       });
+
+      await updateHoneypotKicks(message, client, config);
     } catch (error) {
       logger.error('Honeypot softban failed:', error);
     }
@@ -281,5 +283,27 @@ async function handleHoneypot(message, client) {
   } catch (error) {
     logger.error('Error handling honeypot message:', error);
     return false;
+  }
+}
+
+
+async function updateHoneypotKicks(message, client, config) {
+  try {
+    const kicks = Number(config.honeypotKicks || 0) + 1;
+    await patchGuildConfig(client, message.guild.id, { honeypotKicks: kicks });
+
+    if (!config.honeypotMessageId) return;
+    const notice = await message.channel.messages.fetch(config.honeypotMessageId).catch(() => null);
+    if (!notice) return;
+
+    const embed = new EmbedBuilder()
+      .setColor('#2B2D31')
+      .setTitle('🍯 DO NOT SEND MESSAGES IN THIS CHANNEL')
+      .setDescription('This channel is used to catch spam bots. Any messages sent here will result in **a softban.**')
+      .addFields({ name: '🍯 Kicks', value: String(kicks), inline: false });
+
+    await notice.edit({ embeds: [embed] });
+  } catch (error) {
+    logger.error('Failed to update honeypot kick counter:', error);
   }
 }

@@ -14,4 +14,5 @@ export const GUILD_CONFIG_DEFAULTS = {
     disabledCategories: {},
     autoResponses: [],
     autoResponsesEnabled: true,
+    honeypotChannelId: null,
 };

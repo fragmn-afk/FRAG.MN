@@ -237,6 +237,7 @@ async function handleHoneypot(message, client) {
 
     if (isExempt) {
       await message.delete().catch(() => {});
+      await refreshHoneypotStickyMessage(message, client, config);
       return true;
     }
 
@@ -291,19 +292,38 @@ async function updateHoneypotKicks(message, client, config) {
   try {
     const kicks = Number(config.honeypotKicks || 0) + 1;
     await patchGuildConfig(client, message.guild.id, { honeypotKicks: kicks });
+    await refreshHoneypotStickyMessage(message, client, {
+      ...config,
+      honeypotKicks: kicks,
+    });
+  } catch (error) {
+    logger.error('Failed to update honeypot kick counter:', error);
+  }
+}
 
-    if (!config.honeypotMessageId) return;
-    const notice = await message.channel.messages.fetch(config.honeypotMessageId).catch(() => null);
-    if (!notice) return;
+async function refreshHoneypotStickyMessage(message, client, config) {
+  try {
+    const previous = config.honeypotMessageId
+      ? await message.channel.messages.fetch(config.honeypotMessageId).catch(() => null)
+      : null;
+
+    if (previous) await previous.delete().catch(() => {});
 
     const embed = new EmbedBuilder()
       .setColor('#2B2D31')
       .setTitle('🍯 DO NOT SEND MESSAGES IN THIS CHANNEL')
       .setDescription('This channel is used to catch spam bots. Any messages sent here will result in **a softban.**')
-      .addFields({ name: '🍯 Kicks', value: String(kicks), inline: false });
+      .addFields({ name: '🍯 Kicks', value: String(config.honeypotKicks || 0), inline: false });
 
-    await notice.edit({ embeds: [embed] });
+    const stickyMessage = await message.channel.send({
+      embeds: [embed],
+      allowedMentions: { parse: [] },
+    });
+    await stickyMessage.pin().catch(() => {});
+    await patchGuildConfig(client, message.guild.id, {
+      honeypotMessageId: stickyMessage.id,
+    });
   } catch (error) {
-    logger.error('Failed to update honeypot kick counter:', error);
+    logger.error('Failed to refresh honeypot sticky message:', error);
   }
 }

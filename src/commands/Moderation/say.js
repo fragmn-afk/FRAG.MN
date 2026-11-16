@@ -33,18 +33,18 @@ function resolveTargetChannel(interaction) {
 export default {
     data: new SlashCommandBuilder()
         .setName('say')
-        .setDescription('Send a plain message as the bot')
+        .setDescription('Ботын нэрээр энгийн мессеж илгээнэ')
         .addStringOption((option) =>
             option
                 .setName('message')
-                .setDescription('The message the bot should send')
+                .setDescription('Ботын илгээх мессеж')
                 .setRequired(true)
                 .setMaxLength(2000),
         )
         .addChannelOption((option) =>
             option
                 .setName('channel')
-                .setDescription('Channel to send in (defaults to the current channel)')
+                .setDescription('Мессеж илгээх суваг (анхдагчаар одоогийн суваг)')
                 .addChannelTypes(...TEXT_CHANNEL_TYPES)
                 .setRequired(false),
         )
@@ -78,7 +78,7 @@ export default {
         if (!message) {
             return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
-                message: 'Message cannot be empty.',
+                message: 'Мессеж хоосон байж болохгүй.',
             });
         }
 
@@ -86,7 +86,7 @@ export default {
         if (!channel) {
             return replyUserError(interaction, {
                 type: ErrorTypes.VALIDATION,
-                message: 'Choose a text channel or run this command in one.',
+                message: 'Текст суваг сонгох эсвэл энэ командыг текст сувагт ажиллуулна уу.',
             });
         }
 
@@ -96,14 +96,14 @@ export default {
         if (!memberPermissions?.has(PermissionFlagsBits.SendMessages)) {
             return replyUserError(interaction, {
                 type: ErrorTypes.PERMISSION,
-                message: `You do not have permission to send messages in ${channel}.`,
+                message: `Танд энэ сувагт мессеж илгээх эрх байхгүй: ${channel}.`,
             });
         }
 
         if (!botPermissions?.has(PermissionFlagsBits.SendMessages)) {
             return replyUserError(interaction, {
                 type: ErrorTypes.PERMISSION,
-                message: `I do not have permission to send messages in ${channel}.`,
+                message: `Bot-д энэ сувагт мессеж илгээх эрх байхгүй: ${channel}.`,
             });
         }
 

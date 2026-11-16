@@ -14,13 +14,13 @@ export default {
             o
                 .setName("target")
                 .setRequired(true)
-                .setDescription("User to warn"),
+                .setDescription("Анхааруулга өгөх хэрэглэгч"),
         )
         .addStringOption((o) =>
             o
                 .setName("reason")
                 .setRequired(true)
-                .setDescription("Reason for the warning"),
+                .setDescription("Шалтгаан for the warning"),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
     category: "moderation",
@@ -62,7 +62,7 @@ export default {
 
         if (!member) {
             throw new TitanBotError(
-                "Target not found",
+                "Зорилтот хэрэглэгч not found",
                 ErrorTypes.USER_INPUT,
                 "The target user is not currently in this server."
             );
@@ -100,7 +100,7 @@ export default {
             embeds: [
                 successEmbed(
                     `⚠️ **Warned** ${target.tag}`,
-                    `**Reason:** ${reason}\n**Total Warns:** ${totalCount}`,
+                    `**Шалтгаан:** ${reason}\n**Total Warns:** ${totalCount}`,
                 ),
             ],
         });

@@ -6,17 +6,17 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
   data: new SlashCommandBuilder()
     .setName('honeypot')
-    .setDescription('Configure the automatic honeypot softban channel')
+    .setDescription('Автомат softban хийх хамгаалалтын сувгийг тохируулна')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand((subcommand) =>
       subcommand
         .setName('setup')
-        .setDescription('Create and enable the honeypot channel'),
+        .setDescription('Хамгаалалтын сувгийг үүсгэж идэвхжүүлнэ'),
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('disable')
-        .setDescription('Disable the honeypot channel protection'),
+        .setDescription('Хамгаалалтын сувгийг унтраана protection'),
     ),
   category: 'moderation',
 
@@ -26,7 +26,7 @@ export default {
     if (subcommand === 'disable') {
       await patchGuildConfig(client, interaction.guildId, { honeypotChannelId: null });
       return InteractionHelper.universalReply(interaction, {
-        embeds: [infoEmbed('Honeypot Disabled', 'Honeypot хамгаалалтыг унтраалаа. Channel устахгүй.')],
+        embeds: [infoEmbed('Honeypot унтарлаа', 'Honeypot хамгаалалтыг унтраалаа. Суваг устахгүй.')],
         ephemeral: true,
       });
     }
@@ -44,9 +44,9 @@ export default {
       if (!warningMessage) {
         const warningEmbed = new EmbedBuilder()
           .setColor('#2B2D31')
-          .setTitle('🍯 DO NOT SEND MESSAGES IN THIS CHANNEL')
-          .setDescription('This channel is used to catch spam bots. Any messages sent here will result in **a softban.**')
-          .addFields({ name: '🍯 Kicks', value: String(current.honeypotKicks || 0), inline: false });
+          .setTitle('🍯 ЭНЭ СУВАГТ МЕССЕЖ БҮҮ БИЧ')
+          .setDescription('Энэ суваг нь спам бот илрүүлэх зориулалттай. Энд ямар нэгэн мессеж бичвэл **softban** хийгдэнэ.')
+          .addFields({ name: '🍯 Softban тоо', value: String(current.honeypotKicks || 0), inline: false });
 
         warningMessage = await existing.send({ embeds: [warningEmbed] });
         await warningMessage.pin().catch(() => {});
@@ -54,7 +54,7 @@ export default {
       }
 
       return InteractionHelper.universalReply(interaction, {
-        embeds: [successEmbed('Honeypot Embed Ready', `Warning embed is posted in ${existing}.`)],
+        embeds: [successEmbed('Honeypot анхааруулга бэлэн', `Анхааруулгын Embed байршуулсан суваг: ${existing}.`)],
         ephemeral: true,
       });
     }
@@ -62,7 +62,7 @@ export default {
     const channel = await interaction.guild.channels.create({
       name: 'bot-trap',
       type: ChannelType.GuildText,
-      topic: 'Honeypot security channel. Sending any message here triggers an automatic softban.',
+      topic: 'Honeypot хамгаалалтын суваг. Энд мессеж илгээвэл автоматаар softban хийнэ.',
       permissionOverwrites: [
         {
           id: interaction.guild.roles.everyone.id,
@@ -85,9 +85,9 @@ export default {
 
     const warningEmbed = new EmbedBuilder()
       .setColor('#2B2D31')
-      .setTitle('🍯 DO NOT SEND MESSAGES IN THIS CHANNEL')
-      .setDescription('This channel is used to catch spam bots. Any messages sent here will result in **a softban.**')
-      .addFields({ name: '🍯 Kicks', value: String(current.honeypotKicks || 0), inline: false });
+      .setTitle('🍯 ЭНЭ СУВАГТ МЕССЕЖ БҮҮ БИЧ')
+      .setDescription('Энэ суваг нь спам бот илрүүлэх зориулалттай. Энд ямар нэгэн мессеж бичвэл **softban** хийгдэнэ.')
+      .addFields({ name: '🍯 Softban тоо', value: String(current.honeypotKicks || 0), inline: false });
 
     const warningMessage = await channel.send({ embeds: [warningEmbed] });
     await warningMessage.pin().catch(() => {});
@@ -101,8 +101,8 @@ export default {
     return InteractionHelper.universalReply(interaction, {
       embeds: [
         successEmbed(
-          'Honeypot Enabled',
-          `Channel created: ${channel}\n**Action:** Message deleted → 7-day message purge → Ban → immediate Unban (Softban).\n**Exempt:** Server owner, Bot Owner, Administrator, Manage Server, Manage Messages.`,
+          'Honeypot идэвхжлээ',
+          `Үүсгэсэн суваг: ${channel}\n**Үйлдэл:** Мессеж устгах → Сүүлийн 7 хоногийн мессеж устгах → Ban → шууд Unban (Softban).\n**Хамаарахгүй:** Сервер эзэмшигч, Bot Owner болон админ эрхтэй ажилтнууд.`,
         ),
       ],
       ephemeral: true,

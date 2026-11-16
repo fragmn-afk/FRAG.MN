@@ -29,12 +29,12 @@ export default {
             (option) =>
                 option
                     .setName("duration")
-                    .setDescription("Duration of the timeout")
+                    .setDescription("Timeout үргэлжлэх хугацаа")
                     .setRequired(true)
                     .addChoices(...durationChoices),
         )
         .addStringOption((option) =>
-            option.setName("reason").setDescription("Reason for the timeout"),
+            option.setName("reason").setDescription("Шалтгаан for the timeout"),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
     category: "moderation",
@@ -80,7 +80,7 @@ export default {
         }
         if (!member) {
             throw new TitanBotError(
-                "Target not found",
+                "Зорилтот хэрэглэгч not found",
                 ErrorTypes.USER_INPUT,
                 "The target user is not currently in this server.",
             );
@@ -103,7 +103,7 @@ export default {
             embeds: [
                 successEmbed(
                     `⏳ **Timed out** ${targetUser.tag} for ${durationDisplay}.`,
-                    `**Reason:** ${reason}\n**Case ID:** #${result.caseId}`,
+                    `**Шалтгаан:** ${reason}\n**Case ID:** #${result.caseId}`,
                 ),
             ],
         });

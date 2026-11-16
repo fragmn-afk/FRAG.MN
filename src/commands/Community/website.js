@@ -6,11 +6,11 @@ const WEBSITE_URL = 'https://frag.mn';
 function buildWebsiteEmbed() {
   return new EmbedBuilder()
     .setColor(fragmnConfig.accentColor)
-    .setTitle('🌐 FRAG.MN — OFFICIAL WEBSITE')
+    .setTitle('🌐 FRAG.MN — АЛБАН ЁСНЫ ВЭБСАЙТ')
     .setURL(WEBSITE_URL)
     .setDescription(
       'FRAG.MN-ийн албан ёсны вебсайтаар зочлоорой.\n\n' +
-      '**Website sections**\n' +
+      '**Вебсайтын хэсгүүд**\n' +
       '• Play\n' +
       '• Skin Changer\n' +
       '• Shop\n' +
@@ -25,18 +25,18 @@ function buildWebsiteEmbed() {
       '• Discord'
     )
     .addFields({
-      name: '🔗 Official Website',
+      name: '🔗 Албан ёсны вебсайт',
       value: '[https://frag.mn](https://frag.mn)',
       inline: false,
     })
-    .setFooter({ text: 'FRAG.MN • Official Website' })
+    .setFooter({ text: 'FRAG.MN • Албан ёсны вебсайт' })
     .setTimestamp();
 }
 
 export default {
   data: new SlashCommandBuilder()
     .setName('website')
-    .setDescription('FRAG.MN албан ёсны website холбоосыг Embed хэлбэрээр харуулах'),
+    .setDescription('FRAG.MN-ийн албан ёсны вебсайтын холбоосыг харуулна'),
 
   async prefixExecute(interaction) {
     const row = new ActionRowBuilder().addComponents(

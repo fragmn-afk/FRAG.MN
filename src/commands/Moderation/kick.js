@@ -7,15 +7,15 @@ import { TitanBotError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("kick")
-        .setDescription("Kick a user from the server")
+        .setDescription("Хэрэглэгчийг серверээс Kick хийнэ")
         .addUserOption((option) =>
             option
                 .setName("target")
-                .setDescription("The user to kick")
+                .setDescription("Kick хийх хэрэглэгч")
                 .setRequired(true),
         )
         .addStringOption((option) =>
-            option.setName("reason").setDescription("Reason for the kick"),
+            option.setName("reason").setDescription("Kick хийх шалтгаан"),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
     category: "moderation",
@@ -52,7 +52,7 @@ export default {
 
         if (!member) {
             throw new TitanBotError(
-                "Target not found",
+                "Зорилтот хэрэглэгч not found",
                 ErrorTypes.USER_INPUT,
                 "The target user is not currently in this server.",
                 { subtype: 'user_not_found' },
@@ -70,7 +70,7 @@ export default {
             embeds: [
                 successEmbed(
                     `👢 **Kicked** ${targetUser.tag}`,
-                    `**Reason:** ${reason}\n**Case ID:** #${result.caseId}`,
+                    `**Шалтгаан:** ${reason}\n**Case ID:** #${result.caseId}`,
                 ),
             ],
         });

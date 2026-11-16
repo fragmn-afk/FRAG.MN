@@ -9,23 +9,23 @@ import { replyUserError, ErrorTypes } from '../../utils/errorHandler.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("dm")
-        .setDescription("Send a direct message to a user (Staff only)")
+        .setDescription("Хэрэглэгчид хувийн мессеж илгээнэ (зөвхөн ажилтнууд)")
         .addUserOption(option =>
             option
                 .setName("user")
-                .setDescription("The user to send a DM to")
+                .setDescription("Хувийн мессеж илгээх хэрэглэгч")
                 .setRequired(true)
         )
         .addStringOption(option =>
             option
                 .setName("message")
-                .setDescription("The message to send")
+                .setDescription("Илгээх мессеж")
                 .setRequired(true)
         )
         .addBooleanOption(option =>
             option
                 .setName("anonymous")
-                .setDescription("Send the message anonymously (default: false)")
+                .setDescription("Мессежийг нэрээ нууцлан илгээх (анхдагч: үгүй)")
                 .setRequired(false)
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
@@ -50,11 +50,11 @@ export default {
         try {
             
             if (message.length > 2000) {
-                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Messages must be under 2000 characters.' });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Мессеж 2000 тэмдэгтээс бага байх ёстой.' });
             }
 
             if (targetUser.bot) {
-                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'You cannot send DMs to bot accounts.' });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Ботын бүртгэл рүү хувийн мессеж илгээх боломжгүй.' });
             }
 
             const sanitized = sanitizeMarkdown(message);
@@ -64,10 +64,10 @@ export default {
             await dmChannel.send({
                 embeds: [
                     successEmbed(
-                        anonymous ? "Message from the Staff Team" : `Message from ${interaction.user.tag}`,
+                        anonymous ? "Ажилтнуудын багийн мессеж" : `Message from ${interaction.user.tag}`,
                         sanitized
                     ).setFooter({
-                        text: `You cannot reply to this message. | Logger ID: ${interaction.id}`
+                        text: `Энэ мессежид хариу бичих боломжгүй. | Бүртгэлийн ID: ${interaction.id}`
                     })
                 ]
             });
@@ -76,7 +76,7 @@ export default {
                 client: interaction.client,
                 guild: interaction.guild,
                 event: {
-                    action: "DM Sent",
+                    action: "Хувийн мессеж илгээгдлээ",
                     target: `${targetUser.tag} (${targetUser.id})`,
                     executor: `${interaction.user.tag} (${interaction.user.id})`,
                     reason: `Anonymous: ${anonymous ? 'Yes' : 'No'}`,
@@ -92,8 +92,8 @@ export default {
             return await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     successEmbed(
-                        "DM Sent",
-                        `Successfully sent a message to ${targetUser.tag}`
+                        "Хувийн мессеж илгээгдлээ",
+                        `Хувийн мессежийг амжилттай илгээлээ: ${targetUser.tag}`
                     ),
                 ],
             });
@@ -101,10 +101,10 @@ export default {
             logger.error('DM command error:', error);
             
 if (error.code === 50007) {
-                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Could not send a DM to ${targetUser.tag}. They may have DMs disabled.` });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Хувийн мессеж илгээж чадсангүй: ${targetUser.tag}. Тухайн хэрэглэгч хувийн мессеж хүлээн авах тохиргоогоо хаасан байж болно.` });
             }
             
-            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Failed to send DM: ${error.message}` });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `Хувийн мессеж илгээхэд алдаа гарлаа: ${error.message}` });
         }
     }
 };

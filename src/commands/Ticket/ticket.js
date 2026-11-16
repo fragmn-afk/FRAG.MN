@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { getColor } from '../../config/bot.js';
-import { SlashCommandBuilder, PermissionFlagsBits, PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, PermissionsBitField, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
 import { getGuildConfig, setGuildConfig } from '../../services/config/guildConfig.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
@@ -9,6 +9,23 @@ import { handleInteractionError, replyUserError, ErrorTypes } from '../../utils/
 
 import ticketConfig from './modules/ticket_dashboard.js';
 import { executeTicketEscalation } from './ticket-escalate.js';
+
+const DEFAULT_TICKET_TYPES = [{"label":"Ерөнхий тусламж","value":"general","description":"Ерөнхий асуулт, тусламж","emoji":"🛟"},{"label":"Хүн шалгуулах","value":"player-report","description":"Тоглогчийн талаар мэдээлэх","emoji":"🚨"},{"label":"Ban цуцлуулах хүсэлт","value":"ban-appeal","description":"Ban шийдвэр давж заалдах","emoji":"🔓"},{"label":"Admin авах хүсэлт","value":"admin-apply","description":"Admin эрх хүсэх","emoji":"🛡️"},{"label":"Гомдол мэдүүлэх","value":"complaint","description":"Гомдол, санал хүсэлт","emoji":"📣"},{"label":"Clans тусламж","value":"clan-help","description":"Clan-тай холбоотой тусламж","emoji":"⚔️"},{"label":"Сервер түрээс","value":"server-rent","description":"Game server түрээслэх","emoji":"🖥️"}];
+
+function buildTicketTypeMenu(customId) {
+    const menu = new StringSelectMenuBuilder()
+        .setCustomId(customId)
+        .setPlaceholder('Хүсэлтийн төрөл сонгох...')
+        .setMinValues(1)
+        .setMaxValues(1)
+        .addOptions(DEFAULT_TICKET_TYPES.map((type) => ({
+            label: type.label,
+            value: type.value,
+            description: type.description,
+            emoji: type.emoji,
+        })));
+    return new ActionRowBuilder().addComponents(menu);
+}
 
 export default {
     data: new SlashCommandBuilder()
@@ -305,14 +322,9 @@ export default {
                     description: panel.panelMessage,
                     color: '#720000',
                 });
-                const panelButton = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder()
-                        .setCustomId("create_ticket:" + panelId)
-                        .setLabel(panel.buttonLabel)
-                        .setStyle(ButtonStyle.Primary)
-                        .setEmoji("📩"),
-                );
-                const sentMessage = await panelChannel.send({ embeds: [panelEmbed], components: [panelButton] });
+                panel.ticketTypes = DEFAULT_TICKET_TYPES;
+                const ticketMenu = buildTicketTypeMenu("ticket_type:" + panelId);
+                const sentMessage = await panelChannel.send({ embeds: [panelEmbed], components: [ticketMenu] });
                 panel.messageId = sentMessage.id;
 
                 panels.push(panel);
@@ -413,18 +425,12 @@ description: panelMessage,
                 color: '#720000'
             });
 
-            const ticketButton = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId("create_ticket")
-.setLabel(buttonLabel)
-                    .setStyle(ButtonStyle.Primary)
-                    .setEmoji("📩"),
-            );
+            const ticketMenu = buildTicketTypeMenu("ticket_type:default");
 
             try {
                 const sentPanel = await panelChannel.send({
                     embeds: [setupEmbed],
-                    components: [ticketButton],
+                    components: [ticketMenu],
                 });
 
                 if (client.db && interaction.guildId) {
@@ -437,6 +443,7 @@ description: panelMessage,
                     currentConfig.ticketPanelMessageId = sentPanel?.id || null;
                     currentConfig.ticketPanelMessage = panelMessage;
                     currentConfig.ticketButtonLabel = buttonLabel;
+                    currentConfig.ticketTypes = DEFAULT_TICKET_TYPES;
                     currentConfig.maxTicketsPerUser = maxTicketsPerUser;
                     currentConfig.dmOnClose = dmOnClose;
 

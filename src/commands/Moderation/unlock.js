@@ -10,7 +10,7 @@ export default {
     data: new SlashCommandBuilder()
         .setName("unlock")
         .setDescription(
-            "Unlocks the current channel (allows @everyone to send messages again).",
+            "Одоогийн сувгийн түгжээг тайлж, @everyone мессеж илгээх эрхийг сэргээнэ.",
         )
 .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
     category: "moderation",
@@ -37,7 +37,7 @@ export default {
                 currentPermissions.has(PermissionFlagsBits.SendMessages) ===
                     null
             ) {
-                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `${channel} is not explicitly locked (everyone can already send messages).` });
+                return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `${channel} түгжигдээгүй байна. Хэрэглэгчид аль хэдийн мессеж илгээх боломжтой.` });
             }
 
             await channel.permissionOverwrites.edit(
@@ -53,7 +53,7 @@ export default {
                 client,
                 guild: interaction.guild,
                 event: {
-                    action: "Channel Unlocked",
+                    action: "Сувгийн түгжээ тайлагдлаа",
                     target: channel.toString(),
                     executor: `${interaction.user.tag} (${interaction.user.id})`,
                     metadata: {
@@ -66,8 +66,8 @@ export default {
             await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     successEmbed(
-                        `🔓 **Channel Unlocked**`,
-                        `${channel} is now unlocked. You may speak now.`,
+                        `🔓 **Сувгийн түгжээ тайлагдлаа**`,
+                        `${channel} сувгийн түгжээг тайллаа. Одоо мессеж илгээх боломжтой.`,
                     ),
                 ],
             });

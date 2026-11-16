@@ -133,6 +133,16 @@ export default {
         )
         .addSubcommand((subcommand) =>
             subcommand
+                .setName("panel-edit")
+                .setDescription("Edit an existing ticket panel and update its live message")
+                .addStringOption((option) => option.setName("panel_id").setDescription("Panel ID from /ticket panels").setRequired(true))
+                .addStringOption((option) => option.setName("name").setDescription("New panel name / embed title").setRequired(false))
+                .addStringOption((option) => option.setName("panel_message").setDescription("New embed description").setRequired(false))
+                .addStringOption((option) => option.setName("emoji").setDescription("Emoji shown before the panel title").setRequired(false))
+                .addStringOption((option) => option.setName("color").setDescription("Embed HEX color, e.g. #720000").setRequired(false)),
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
                 .setName("panels")
                 .setDescription("List all configured ticket panels"),
         )
@@ -191,6 +201,57 @@ export default {
 
         if (subcommand === "dashboard") {
             return ticketConfig.execute(interaction, config, client);
+        }
+
+        if (subcommand === "panel-edit") {
+            const guildConfig = await getGuildConfig(client, interaction.guildId);
+            const panelId = interaction.options.getString("panel_id", true);
+            const panels = Array.isArray(guildConfig.ticketPanels) ? [...guildConfig.ticketPanels] : [];
+            const panel = panels.find((item) => item.id === panelId);
+            if (!panel) {
+                return replyUserError(interaction, { type: ErrorTypes.USER_INPUT, message: "Panel ID олдсонгүй. /ticket panels ашиглан ID-гаа шалгана уу." });
+            }
+
+            const name = interaction.options.getString("name");
+            const panelMessage = interaction.options.getString("panel_message");
+            const emoji = interaction.options.getString("emoji");
+            const color = interaction.options.getString("color");
+
+            if (name !== null) panel.name = name.trim().slice(0, 80);
+            if (panelMessage !== null) panel.panelMessage = panelMessage.trim().slice(0, 4000);
+            if (emoji !== null) panel.emoji = emoji.trim().slice(0, 32);
+            if (color !== null) {
+                const normalizedColor = color.trim();
+                if (!/^#?[0-9a-fA-F]{6}$/.test(normalizedColor)) {
+                    return replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: "Өнгөний HEX код буруу байна. Жишээ: #720000" });
+                }
+                panel.color = normalizedColor.startsWith("#") ? normalizedColor : "#" + normalizedColor;
+            }
+
+            if (name === null && panelMessage === null && emoji === null && color === null) {
+                return replyUserError(interaction, { type: ErrorTypes.VALIDATION, message: "Өөрчлөх дор хаяж нэг талбар оруулна уу." });
+            }
+
+            const panelChannel = await interaction.guild.channels.fetch(panel.channelId).catch(() => null);
+            const panelMessageObject = panelChannel?.messages
+                ? await panelChannel.messages.fetch(panel.messageId).catch(() => null)
+                : null;
+            if (!panelMessageObject) {
+                return replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: "Panel message олдсонгүй. Panel channel болон message устсан эсэхийг шалгана уу." });
+            }
+
+            const updatedEmbed = createEmbed({
+                title: (panel.emoji ? panel.emoji + " " : "") + panel.name,
+                description: panel.panelMessage,
+                color: panel.color || "#720000",
+            });
+            await panelMessageObject.edit({ embeds: [updatedEmbed] });
+            guildConfig.ticketPanels = panels;
+            await setGuildConfig(client, interaction.guildId, guildConfig);
+
+            return InteractionHelper.safeEditReply(interaction, {
+                embeds: [successEmbed("Ticket Panel Updated", "**" + panel.name + "** panel-ийн Embed-ийг шинэчиллээ.\nPanel ID: `" + panel.id + "`\nChannel: " + panelChannel)],
+            });
         }
 
         if (subcommand === "panels") {

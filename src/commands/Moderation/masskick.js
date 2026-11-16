@@ -9,7 +9,7 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("masskick")
-        .setDescription("Kick multiple users from the server at once")
+        .setDescription("Олон хэрэглэгчийг Kick хийнэ from the server at once")
         .addStringOption(option =>
             option
                 .setName("users")
@@ -18,7 +18,7 @@ export default {
         )
         .addStringOption(option =>
             option.setName("reason")
-                .setDescription("Reason for the mass kick")
+                .setDescription("Шалтгаан for the mass kick")
                 .setRequired(false)
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
@@ -78,7 +78,7 @@ export default {
                         results.skipped.push({
                             user: member.user.tag,
                             userId,
-                            reason: ModerationService.buildHierarchySkipReason(interaction.member, member, 'kick'),
+                            reason: ModerationService.buildHierarchySkipШалтгаан(interaction.member, member, 'kick'),
                         });
                         continue;
                     }
@@ -88,7 +88,7 @@ export default {
                         results.skipped.push({
                             user: member.user.tag,
                             userId,
-                            reason: ModerationService.buildHierarchySkipReason(interaction.member, member, 'kick', 'bot'),
+                            reason: ModerationService.buildHierarchySkipШалтгаан(interaction.member, member, 'kick', 'bot'),
                         });
                         continue;
                     }
@@ -97,7 +97,7 @@ export default {
                         results.skipped.push({
                             user: member.user.tag,
                             userId,
-                            reason: 'Target has Admin or a managed role, or bot lacks Kick Members',
+                            reason: 'Зорилтот хэрэглэгч has Admin or a managed role, or bot lacks Kick Members',
                         });
                         continue;
                     }
@@ -140,7 +140,7 @@ export default {
             let description = `**Mass Kick Results:**\n\n`;
             
             if (results.successful.length > 0) {
-                description += `✅ **Successfully Kicked (${results.successful.length}):**\n`;
+                description += `✅ **Амжилттай Kicked (${results.successful.length}):**\n`;
                 results.successful.forEach(result => {
                     description += `• ${result.user} (${result.userId})\n`;
                 });
@@ -175,7 +175,7 @@ export default {
 
         } catch (error) {
             logger.error("Error in masskick command:", error);
-            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while processing the mass kick. Please try again later.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Алдаа гарлаа while processing the mass kick. Please try again later.' });
         }
     }
 };

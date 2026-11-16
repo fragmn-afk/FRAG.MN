@@ -10,41 +10,41 @@ function buildMembershipEmbed() {
 
   return new EmbedBuilder()
     .setColor(fragmnConfig.accentColor)
-    .setTitle('⚡ FRAG.MN • MEMBERSHIP')
+    .setTitle('⚡ FRAG.MN • ГИШҮҮНЧЛЭЛ')
     .setDescription(
-      'FRAG.MN community-ийн онцгой membership багцуудтай танилцана уу.\n' +
-      'Өөрийн зэрэглэлээ сонгож, community-ийн нэг хэсэг болоорой.'
+      'FRAG.MN community-ийн онцгой гишүүнчлэлийн багцуудтай танилцана уу.\n' +
+      'Өөрийн зэрэглэлийг сонгон community-ийн нэг хэсэг болоорой.'
     )
     .addFields(
       {
-        name: '💎 VIP — 1 MONTH',
+        name: '💎 VIP — 1 САР',
         value: '**' + formatPrice(vipPrice) + '**\nQPay-аар худалдан авах боломжтой.',
         inline: false,
       },
       {
         name: '👑 EMPEROR',
-        value: '**0₮-с эхлэх үнэ**\nДуудлага худалдаагаар олгоно.',
+        value: '**0₮-с эхлэх үнэ**\nДуудлага худалдаагаар санал болгоно.',
         inline: false,
       },
       {
         name: '🔥 BOSS',
-        value: '**400,000₮-с эхлэх үнэ**\nДуудлага худалдаагаар олгоно.',
+        value: '**400,000₮-с эхлэх үнэ**\nДуудлага худалдаагаар санал болгоно.',
         inline: false,
       },
     )
     .addFields({
-      name: '📩 Худалдан авалт',
+      name: '📩 Худалдан авах',
       value: 'VIP авахдаа `/fragmn vip buy` командыг ашиглана уу.\nEMPEROR болон BOSS-ийн дуудлага худалдааны мэдээллийг staff-аас авна уу.',
       inline: false,
     })
-    .setFooter({ text: 'FRAG.MN • Membership' })
+    .setFooter({ text: 'FRAG.MN • Гишүүнчлэл' })
     .setTimestamp();
 }
 
 export default {
   data: new SlashCommandBuilder()
     .setName('membership')
-    .setDescription('FRAG.MN membership багц болон үнийн мэдээлэл харах'),
+    .setDescription('FRAG.MN гишүүнчлэлийн багц болон үнийн мэдээллийг харуулна'),
 
   async execute(interaction) {
     if (!interaction.inGuild()) {

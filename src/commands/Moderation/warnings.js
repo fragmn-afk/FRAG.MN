@@ -14,7 +14,7 @@ export default {
             o
                 .setName("target")
                 .setRequired(true)
-                .setDescription("User to check warnings for"),
+                .setDescription("Шалгах хэрэглэгч warnings for"),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
     category: "moderation",
@@ -22,7 +22,7 @@ export default {
     async execute(interaction, config, client) {
         const deferSuccess = await InteractionHelper.safeDefer(interaction);
         if (!deferSuccess) {
-            logger.warn(`Warnings interaction defer failed`, {
+            logger.warn(`Анхааруулгууд interaction defer failed`, {
                 userId: interaction.user.id,
                 guildId: interaction.guildId,
                 commandName: 'warnings',
@@ -33,14 +33,14 @@ export default {
         const target = interaction.options.getUser("target");
         const guildId = interaction.guildId;
 
-        const validWarnings = await WarningService.getWarnings(guildId, target.id);
-        const totalWarns = validWarnings.length;
+        const validАнхааруулгууд = await WarningService.getАнхааруулгууд(guildId, target.id);
+        const totalWarns = validАнхааруулгууд.length;
 
         if (totalWarns === 0) {
             await InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     createEmbed({
-                        title: `Warnings: ${target.tag}`,
+                        title: `Анхааруулгууд: ${target.tag}`,
                         description: "This user has no recorded warnings.",
                     }).setColor(getColor('success')),
                 ],
@@ -49,16 +49,16 @@ export default {
         }
 
         const embed = createEmbed({
-            title: `Warnings: ${target.tag}`,
-            description: `Total Warnings: **${totalWarns}**`,
+            title: `Анхааруулгууд: ${target.tag}`,
+            description: `Total Анхааруулгууд: **${totalWarns}**`,
         }).setColor(getColor('warning'));
 
-        const warningFields = validWarnings
+        const warningFields = validАнхааруулгууд
             .map((w, i) => {
                 const discordTimestamp = Math.floor(w.timestamp / 1000);
                 return {
-                    name: `[#${i + 1}] Reason: ${w.reason.substring(0, 100)}`,
-                    value: `**Moderator:** <@${w.moderatorId}>\n**Date:** <t:${discordTimestamp}:F> (<t:${discordTimestamp}:R>)`,
+                    name: `[#${i + 1}] Шалтгаан: ${w.reason.substring(0, 100)}`,
+                    value: `**Модератор:** <@${w.moderatorId}>\n**Date:** <t:${discordTimestamp}:F> (<t:${discordTimestamp}:R>)`,
                     inline: false,
                 };
             })
@@ -73,7 +73,7 @@ export default {
                 .setStyle(ButtonStyle.Danger),
             new ButtonBuilder()
                 .setCustomId(`warning_clear_all:${target.id}:${interaction.user.id}`)
-                .setLabel('Clear All Warnings')
+                .setLabel('Clear All Анхааруулгууд')
                 .setStyle(ButtonStyle.Danger),
         );
 
@@ -81,14 +81,14 @@ export default {
             client,
             guild: interaction.guild,
             event: {
-                action: "Warnings Viewed",
+                action: "Анхааруулгууд Viewed",
                 target: `${target.tag} (${target.id})`,
                 executor: `${interaction.user.tag} (${interaction.user.id})`,
                 reason: `Viewed ${totalWarns} warnings`,
                 metadata: {
                     userId: target.id,
                     moderatorId: interaction.user.id,
-                    totalWarnings: totalWarns,
+                    totalАнхааруулгууд: totalWarns,
                 },
             },
         });

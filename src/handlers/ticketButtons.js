@@ -170,7 +170,8 @@ const createTicketHandler = {
         });
       }
 
-      await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+      const deferred = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+      if (!deferred) return;
       const categoryId = panel ? (panel.categoryId || null) : (config.ticketCategoryId || null);
       const panelOptions = panel ? {
         panelId: panel.id,

@@ -43,7 +43,7 @@ export default {
 
         if (!member) {
             throw new TitanBotError(
-                "Target not found",
+                "Зорилтот хэрэглэгч not found",
                 ErrorTypes.USER_INPUT,
                 "The target user is not currently in this server.",
             );

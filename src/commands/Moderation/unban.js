@@ -17,7 +17,7 @@ export default {
         )
         .addStringOption(option =>
             option.setName("reason")
-                .setDescription("Reason for the unban")
+                .setDescription("Шалтгаан for the unban")
                 .setRequired(false),
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
@@ -34,8 +34,8 @@ export default {
             return;
         }
 
-        const rawTarget = interaction.options.getString("target");
-        const targetId = rawTarget.replace(/[<@!>]/g, '').trim();
+        const rawЗорилтот хэрэглэгч = interaction.options.getString("target");
+        const targetId = rawЗорилтот хэрэглэгч.replace(/[<@!>]/g, '').trim();
 
         if (!/^\d{17,20}$/.test(targetId)) {
             return replyUserError(interaction, {
@@ -64,8 +64,8 @@ export default {
         await InteractionHelper.safeEditReply(interaction, {
             embeds: [
                 successEmbed(
-                    "✅ User Unbanned",
-                    `Successfully unbanned **${targetUser.tag}** from the server.\n\n**Reason:** ${reason}\n**Case ID:** #${result.caseId}`,
+                    "✅ Ban цуцлагдлаа",
+                    `Амжилттай unbanned **${targetUser.tag}** from the server.\n\n**Шалтгаан:** ${reason}\n**Case ID:** #${result.caseId}`,
                 ),
             ],
         });

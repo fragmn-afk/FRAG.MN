@@ -10,7 +10,7 @@ export default {
     data: new SlashCommandBuilder()
     .setName("lock")
     .setDescription(
-      "Locks the current channel (prevents @everyone from sending messages).",
+      "Одоогийн сувгийг түгжиж, @everyone мессеж илгээхийг хориглоно.",
     )
 .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
   category: "moderation",
@@ -45,7 +45,7 @@ export default {
         client,
         guild: interaction.guild,
         event: {
-          action: "Channel Locked",
+          action: "Суваг түгжигдлээ",
           target: channel.toString(),
           executor: `${interaction.user.tag} (${interaction.user.id})`,
           metadata: {
@@ -59,14 +59,14 @@ export default {
       await InteractionHelper.safeEditReply(interaction, {
         embeds: [
           successEmbed(
-            `🔒 **Channel Locked**`,
-            `${channel} is now locked down. No one can speak here now.`,
+            `🔒 **Суваг түгжигдлээ**`,
+            `${channel} одоо түгжигдлээ. Энэ сувагт мессеж бичих боломжгүй.`,
           ),
         ],
       });
     } catch (error) {
       logger.error('Lock command error:', error);
-      await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'An unexpected error occurred while trying to lock the channel. Check my permissions (I need \'Manage Channels\').' });
+      await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'Сувгийг түгжих үед алдаа гарлаа. Bot-д Manage Channels эрх байгаа эсэхийг шалгана уу.' });
     }
   }
 };

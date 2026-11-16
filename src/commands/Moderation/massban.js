@@ -9,7 +9,7 @@ import { InteractionHelper } from '../../utils/interactionHelper.js';
 export default {
     data: new SlashCommandBuilder()
         .setName("massban")
-        .setDescription("Ban multiple users from the server at once")
+        .setDescription("Олон хэрэглэгчийг Ban хийнэ from the server at once")
         .addStringOption(option =>
             option
                 .setName("users")
@@ -18,7 +18,7 @@ export default {
         )
         .addStringOption(option =>
             option.setName("reason")
-                .setDescription("Reason for the mass ban")
+                .setDescription("Шалтгаан for the mass ban")
                 .setRequired(false)
         )
         .addIntegerOption(option =>
@@ -78,7 +78,7 @@ export default {
                     const user = await client.users.fetch(userId).catch(() => null);
                     
                     if (!user) {
-                        results.failed.push({ userId, reason: "User not found" });
+                        results.failed.push({ userId, reason: "Хэрэглэгч олдсонгүй" });
                         continue;
                     }
 
@@ -90,7 +90,7 @@ export default {
                             results.skipped.push({
                                 user: user.tag,
                                 userId,
-                                reason: ModerationService.buildHierarchySkipReason(interaction.member, member, 'ban'),
+                                reason: ModerationService.buildHierarchySkipШалтгаан(interaction.member, member, 'ban'),
                             });
                             continue;
                         }
@@ -100,7 +100,7 @@ export default {
                             results.skipped.push({
                                 user: user.tag,
                                 userId,
-                                reason: ModerationService.buildHierarchySkipReason(interaction.member, member, 'ban', 'bot'),
+                                reason: ModerationService.buildHierarchySkipШалтгаан(interaction.member, member, 'ban', 'bot'),
                             });
                             continue;
                         }
@@ -148,7 +148,7 @@ export default {
             let description = `**Mass Ban Results:**\n\n`;
             
             if (results.successful.length > 0) {
-                description += `✅ **Successfully Banned (${results.successful.length}):**\n`;
+                description += `✅ **Амжилттай Banned (${results.successful.length}):**\n`;
                 results.successful.forEach(result => {
                     description += `• ${result.user} (${result.userId})\n`;
                 });
@@ -183,7 +183,7 @@ export default {
 
         } catch (error) {
             logger.error("Error in massban command:", error);
-            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while processing the mass ban. Please try again later.' });
+            return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Алдаа гарлаа while processing the mass ban. Please try again later.' });
         }
     }
 };

@@ -141,56 +141,61 @@ const createTicketHandler = {
     try {
       if (!(await ensureGuildContext(interaction))) return;
 
-      const panelId = args?.[0] || null;
+      const panelId = args?.[0] === 'default' ? null : (args?.[0] || null);
+      const selectedType = args?.[1] || null;
       const rateLimitKey = interaction.user.id + ':create_ticket:' + (panelId || 'default');
-      const allowed = await checkRateLimit(rateLimitKey, 3, 60000);
-      if (!allowed) {
-        await replyUserError(interaction, { type: ErrorTypes.RATE_LIMIT, message: 'You are creating tickets too quickly. Please wait a minute and try again.' });
-        return;
+      if (!(await checkRateLimit(rateLimitKey, 3, 60000))) {
+        return replyUserError(interaction, { type: ErrorTypes.RATE_LIMIT, message: 'You are creating tickets too quickly. Please wait a minute and try again.' });
       }
 
       const config = await getGuildConfig(client, interaction.guildId);
       const access = await resolveTicketPanelAccess(interaction, config, panelId);
       if (!access.allowed) {
-        return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: access.message });
+        return replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: access.message });
       }
 
       const panel = access.panel;
+      const types = panel?.ticketTypes || config.ticketTypes || [];
+      const type = types.find((item) => item.value === selectedType) || types[0] || {
+        label: 'Ерөнхий тусламж', value: 'general', emoji: '🛟', description: 'Ерөнхий тусламж',
+      };
       const maxTicketsPerUser = panel?.maxTicketsPerUser ?? config.maxTicketsPerUser ?? 3;
       const { getUserTicketCount } = await import('../services/ticket.js');
       const currentTicketCount = await getUserTicketCount(interaction.guildId, interaction.user.id, panelId);
 
       if (currentTicketCount >= maxTicketsPerUser) {
-        return await replyUserError(interaction, {
+        return replyUserError(interaction, {
           type: ErrorTypes.UNKNOWN,
-          message: 'You have reached the maximum number of open tickets (' + maxTicketsPerUser + ') for this panel.\n\nCurrent Tickets: ' + currentTicketCount + '/' + maxTicketsPerUser,
+          message: 'Та энэ panel-ийн нээлттэй ticket-ийн дээд хязгаарт хүрсэн байна (' + currentTicketCount + '/' + maxTicketsPerUser + ').',
         });
       }
 
-      const modal = new ModalBuilder()
-        .setCustomId(panelId ? 'create_ticket_modal:' + panelId : 'create_ticket_modal')
-        .setTitle((panel?.name || 'Create a Ticket').slice(0, 45));
+      await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+      const categoryId = panel ? (panel.categoryId || null) : (config.ticketCategoryId || null);
+      const panelOptions = panel ? {
+        panelId: panel.id,
+        maxTicketsPerUser: panel.maxTicketsPerUser,
+        staffRoleId: panel.staffRoleId,
+        staffRoleIds: panel.staffRoleIds || [panel.staffRoleId].filter(Boolean),
+        closedCategoryId: panel.closedCategoryId,
+        dmOnClose: panel.dmOnClose,
+        autoPing: panel.autoPing,
+        transcriptChannelId: panel.transcriptChannelId,
+        ticketLogsChannelId: panel.ticketLogsChannelId,
+        escalateRoleId: panel.escalateRoleId,
+      } : {};
 
-      const reasonInput = new TextInputBuilder()
-        .setCustomId('reason')
-        .setLabel('Why are you creating this ticket?')
-        .setStyle(TextInputStyle.Paragraph)
-        .setPlaceholder('Describe your issue...')
-        .setRequired(true)
-        .setMaxLength(1000);
-
-      const actionRow = new ActionRowBuilder().addComponents(reasonInput);
-      modal.addComponents(actionRow);
-      await interaction.showModal(modal);
+      const reason = type.label + (type.description ? ' — ' + type.description : '');
+      const { channel } = await createTicket(interaction.guild, interaction.member, categoryId, reason, 'none', panelOptions);
+      await interaction.editReply({
+        embeds: [successEmbed('Ticket Created', type.emoji + ' **' + type.label + '** хүсэлт үүслээ: ' + channel)],
+      });
     } catch (error) {
-      logger.error('Error creating ticket modal:', error);
-      if (!interaction.replied && !interaction.deferred) {
-        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Could not open ticket creation form.' });
-      }
+      logger.error('Error creating ticket:', error);
+      await handleInteractionError(interaction, error, { type: 'button', handler: 'ticket', customId: interaction.customId });
     }
   }
 };
-
 const createTicketModalHandler = {
   name: 'create_ticket_modal',
   async execute(interaction, client, args = []) {
